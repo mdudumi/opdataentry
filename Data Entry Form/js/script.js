@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const toggleBtn = document.getElementById('toggleMode');
   const exportBtn = document.getElementById('exportBtn');
 
-  const API_URL = 'https://script.google.com/macros/s/AKfycbwu13xjG1I5LK_4dwkRKlxT8sp6NS2K0J4LS1NECE0wvqM9qoNMI2zRvcggqfAtkprlwg/exec'; // <-- put your deployed Google Apps Script Web App URL here
+  const API_URL = 'https://script.google.com/macros/s/AKfycbxIxEEk8tkM6bMSVVdQL5XiWCTxGyk3tRqWgH1cLGKVeKI8rrpHG32w1NItRfagim9RsA/exec'; // <-- put your deployed Google Apps Script Web App URL here
 
   const fields = [
     'entry_date', 'pad', 'well', 'tub_press', 'cas_press', 'speed', 'fluid_level',
