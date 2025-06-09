@@ -32,6 +32,61 @@ document.addEventListener("DOMContentLoaded", () => {
 
   let entries = [];
 
+  // Utility: get unique values with optional filter function
+  function uniqueValues(key, filterFn = () => true) {
+    return [...new Set(entries.filter(filterFn).map(e => e[key]).filter(Boolean))];
+  }
+
+  // Populate date filter options
+  function populateDateFilter() {
+    const currentValue = dateFilter.value;
+    const options = ['<option value="">All Dates</option>']
+      .concat(uniqueValues('entry_date').map(val => `<option value="${val}">${val}</option>`));
+    dateFilter.innerHTML = options.join('');
+    if (uniqueValues('entry_date').includes(currentValue)) {
+      dateFilter.value = currentValue;
+    } else {
+      dateFilter.value = '';
+    }
+  }
+
+  // Populate pad filter options
+  function populatePadFilter() {
+    const currentValue = padFilter.value;
+    const options = ['<option value="">All Pads</option>']
+      .concat(uniqueValues('pad').map(val => `<option value="${val}">${val}</option>`));
+    padFilter.innerHTML = options.join('');
+    if (uniqueValues('pad').includes(currentValue)) {
+      padFilter.value = currentValue;
+    } else {
+      padFilter.value = '';
+    }
+  }
+
+  // Populate well filter options, depending on selected pad
+  function populateWellFilter() {
+    const selectedPad = padFilter.value;
+    const currentValue = wellFilter.value;
+    const wells = selectedPad
+      ? uniqueValues('well', e => e.pad === selectedPad)
+      : uniqueValues('well');
+    const options = ['<option value="">All Wells</option>']
+      .concat(wells.map(val => `<option value="${val}">${val}</option>`));
+    wellFilter.innerHTML = options.join('');
+    if (wells.includes(currentValue)) {
+      wellFilter.value = currentValue;
+    } else {
+      wellFilter.value = '';
+    }
+  }
+
+  // Update all filters together (called after fetching or pad changes)
+  function updateFilters() {
+    populateDateFilter();
+    populatePadFilter();
+    populateWellFilter();
+  }
+
   // Fetch data from API
   async function fetchEntries() {
     try {
@@ -39,45 +94,29 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!res.ok) throw new Error("Failed to fetch entries");
       const data = await res.json();
       entries = data;
+      updateFilters();
       renderTable();
-      updateFilters(padFilter.value); // Update filters after fetch, considering current pad filter
     } catch (error) {
       console.error("Error fetching data:", error);
     }
   }
 
-  // Add a new entry
-  async function addEntry(data) {
-    try {
-      const res = await fetch(API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      if (!res.ok) throw new Error("Failed to add entry");
-      await fetchEntries(); // Refresh entries after adding
-      form.reset();
-    } catch (error) {
-      console.error("Error adding entry:", error);
-    }
-  }
-
-  // Render the table
+  // Render the table with current filters
   function renderTable() {
     tableBody.innerHTML = "";
     const dateVal = dateFilter.value;
     const padVal = padFilter.value;
     const wellVal = wellFilter.value;
 
-    const filteredEntries = entries.filter((entry) =>
+    const filteredEntries = entries.filter(entry =>
       (!dateVal || entry.entry_date === dateVal) &&
       (!padVal || entry.pad === padVal) &&
       (!wellVal || entry.well === wellVal)
     );
 
-    filteredEntries.forEach((entry) => {
+    filteredEntries.forEach(entry => {
       const row = document.createElement("tr");
-      fields.forEach((field) => {
+      fields.forEach(field => {
         const cell = document.createElement("td");
         cell.textContent = entry[field] || "";
         row.appendChild(cell);
@@ -86,67 +125,52 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Populate dropdown filters dynamically, with well filter dependent on selected pad
-  function updateFilters(selectedPad = "") {
-    const uniqueOptions = (key, filterFn = () => true) =>
-      [...new Set(entries.filter(filterFn).map((e) => e[key]).filter(Boolean))];
-
-    // Date filter unchanged
-    dateFilter.innerHTML =
-      '<option value="">All Dates</option>' +
-      uniqueOptions("entry_date")
-        .map((value) => `<option value="${value}">${value}</option>`)
-        .join("");
-
-    // Pad filter unchanged
-    padFilter.innerHTML =
-      '<option value="">All Pads</option>' +
-      uniqueOptions("pad")
-        .map((value) => `<option value="${value}">${value}</option>`)
-        .join("");
-
-    // Set padFilter value again to keep current selection (important after resetting options)
-    if (selectedPad) {
-      padFilter.value = selectedPad;
-    } else {
-      padFilter.value = "";
-    }
-
-    // Well filter depends on selectedPad
-    const wellFilterOptions = selectedPad
-      ? uniqueOptions("well", (e) => e.pad === selectedPad)
-      : uniqueOptions("well");
-
-    wellFilter.innerHTML =
-      '<option value="">All Wells</option>' +
-      wellFilterOptions
-        .map((value) => `<option value="${value}">${value}</option>`)
-        .join("");
-
-    // If current wellFilter value is no longer valid (filtered out), reset it
-    if (!wellFilterOptions.includes(wellFilter.value)) {
-      wellFilter.value = "";
+  // Add new entry to API
+  async function addEntry(data) {
+    try {
+      const res = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error("Failed to add entry");
+      await fetchEntries();
+      form.reset();
+    } catch (error) {
+      console.error("Error adding entry:", error);
     }
   }
 
-  // Handle form submission
-  form.addEventListener("submit", (e) => {
+  // Event Listeners
+  form.addEventListener("submit", e => {
     e.preventDefault();
     const data = {};
-    fields.forEach((field) => {
+    fields.forEach(field => {
       const input = form[field];
       if (input) data[field] = input.value;
     });
     addEntry(data);
   });
 
-  // Handle export to CSV
+  dateFilter.addEventListener("change", () => {
+    renderTable();
+  });
+
+  padFilter.addEventListener("change", () => {
+    populateWellFilter(); // Update wells when pad changes
+    renderTable();
+  });
+
+  wellFilter.addEventListener("change", () => {
+    renderTable();
+  });
+
   exportBtn.addEventListener("click", () => {
     const csvContent =
       fields.join(",") +
       "\n" +
       entries
-        .map((entry) => fields.map((field) => entry[field] || "").join(","))
+        .map(entry => fields.map(field => entry[field] || "").join(","))
         .join("\n");
 
     const blob = new Blob([csvContent], { type: "text/csv" });
@@ -159,16 +183,6 @@ document.addEventListener("DOMContentLoaded", () => {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   });
-
-  // Filter events
-  dateFilter.addEventListener("change", () => renderTable());
-
-  padFilter.addEventListener("change", () => {
-    updateFilters(padFilter.value);
-    renderTable();
-  });
-
-  wellFilter.addEventListener("change", () => renderTable());
 
   // Initial fetch
   fetchEntries();
