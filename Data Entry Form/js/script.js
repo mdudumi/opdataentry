@@ -40,6 +40,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const data = await res.json();
       entries = data;
       renderTable();
+      updateFilters(padFilter.value); // Update filters after fetch, considering current pad filter
     } catch (error) {
       console.error("Error fetching data:", error);
     }
@@ -55,6 +56,7 @@ document.addEventListener("DOMContentLoaded", () => {
       });
       if (!res.ok) throw new Error("Failed to add entry");
       await fetchEntries(); // Refresh entries after adding
+      form.reset();
     } catch (error) {
       console.error("Error adding entry:", error);
     }
@@ -84,27 +86,47 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Populate dropdown filters dynamically
-  function updateFilters() {
-    const uniqueOptions = (key) => [...new Set(entries.map((e) => e[key]).filter(Boolean))];
+  // Populate dropdown filters dynamically, with well filter dependent on selected pad
+  function updateFilters(selectedPad = "") {
+    const uniqueOptions = (key, filterFn = () => true) =>
+      [...new Set(entries.filter(filterFn).map((e) => e[key]).filter(Boolean))];
 
+    // Date filter unchanged
     dateFilter.innerHTML =
       '<option value="">All Dates</option>' +
       uniqueOptions("entry_date")
         .map((value) => `<option value="${value}">${value}</option>`)
         .join("");
 
+    // Pad filter unchanged
     padFilter.innerHTML =
       '<option value="">All Pads</option>' +
       uniqueOptions("pad")
         .map((value) => `<option value="${value}">${value}</option>`)
         .join("");
 
+    // Set padFilter value again to keep current selection (important after resetting options)
+    if (selectedPad) {
+      padFilter.value = selectedPad;
+    } else {
+      padFilter.value = "";
+    }
+
+    // Well filter depends on selectedPad
+    const wellFilterOptions = selectedPad
+      ? uniqueOptions("well", (e) => e.pad === selectedPad)
+      : uniqueOptions("well");
+
     wellFilter.innerHTML =
       '<option value="">All Wells</option>' +
-      uniqueOptions("well")
+      wellFilterOptions
         .map((value) => `<option value="${value}">${value}</option>`)
         .join("");
+
+    // If current wellFilter value is no longer valid (filtered out), reset it
+    if (!wellFilterOptions.includes(wellFilter.value)) {
+      wellFilter.value = "";
+    }
   }
 
   // Handle form submission
@@ -116,7 +138,6 @@ document.addEventListener("DOMContentLoaded", () => {
       if (input) data[field] = input.value;
     });
     addEntry(data);
-    form.reset();
   });
 
   // Handle export to CSV
@@ -140,9 +161,14 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // Filter events
-  [dateFilter, padFilter, wellFilter].forEach((filter) =>
-    filter.addEventListener("change", renderTable)
-  );
+  dateFilter.addEventListener("change", () => renderTable());
+
+  padFilter.addEventListener("change", () => {
+    updateFilters(padFilter.value);
+    renderTable();
+  });
+
+  wellFilter.addEventListener("change", () => renderTable());
 
   // Initial fetch
   fetchEntries();
