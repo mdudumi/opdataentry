@@ -1,8 +1,8 @@
 document.addEventListener('DOMContentLoaded', () => {
   const form = document.getElementById('wellForm');
   const tableBody = document.querySelector('#previewTable tbody');
-  const wellSelect = document.getElementById('well');
-  const padSelect = document.getElementById('pad');
+  const padSelect = document.getElementById('pad'); // form pad
+  const wellSelect = document.getElementById('well'); // form well
   const dateFilter = document.getElementById('dateFilter');
   const padFilter = document.getElementById('padFilter');
   const wellFilter = document.getElementById('wellFilter');
@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let entries = JSON.parse(localStorage.getItem('wellEntries') || '[]');
 
+  // Handle form submission
   form?.addEventListener('submit', (e) => {
     e.preventDefault();
     const data = {};
@@ -28,6 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
     wellSelect.innerHTML = '<option value="">-- Select Well --</option>'; // reset wells
   });
 
+  // Dynamically generate form wells from pad
   padSelect?.addEventListener('change', () => {
     const pad = padSelect.value;
     wellSelect.innerHTML = '<option value="">-- Select Well --</option>';
@@ -39,8 +41,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // Render filtered table
   function renderTable() {
-    // Preserve filter values
     const dateVal = dateFilter.value;
     const padVal = padFilter.value;
     const wellVal = wellFilter.value;
@@ -51,13 +53,13 @@ document.addEventListener('DOMContentLoaded', () => {
       (!wellVal || e.well === wellVal)
     );
 
-    const uniqueOptions = (key) => [...new Set(entries.map(e => e[key]).filter(Boolean))];
-
-    function updateFilter(select, key, label, selectedVal) {
+    // Keep filters persistent
+    const updateFilter = (select, key, label, selectedVal) => {
+      const unique = [...new Set(entries.map(e => e[key]).filter(Boolean))];
       select.innerHTML = `<option value="">${label}</option>` +
-        uniqueOptions(key).map(v => `<option value="${v}">${v}</option>`).join('');
+        unique.map(v => `<option value="${v}">${v}</option>`).join('');
       select.value = selectedVal;
-    }
+    };
 
     updateFilter(dateFilter, 'entry_date', 'All Dates', dateVal);
     updateFilter(padFilter, 'pad', 'All PADs', padVal);
@@ -113,9 +115,9 @@ document.addEventListener('DOMContentLoaded', () => {
     URL.revokeObjectURL(url);
   });
 
-  // Re-render table on filter changes
-  [dateFilter, padFilter, wellFilter].forEach(select => {
-    select?.addEventListener('change', renderTable);
+  // Re-render table when filters change
+  [dateFilter, padFilter, wellFilter].forEach(filter => {
+    filter?.addEventListener('change', renderTable);
   });
 
   renderTable();
