@@ -1,6 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
   const API_URL =
-    "https://script.google.com/macros/s/AKfycbxIxEEk8tkM6bMSVVdQL5XiWCTxGyk3tRqWgH1cLGKVeKI8rrpHG32w1NItRfagim9RsA/exec";
+    "https://script.google.com/macros/s/AKfycbxBEm--xTVpAetlFYGbgQP88yhk5HFFMViAG3RdIyZj8ZGj2xBMSl1EdnZu94nYfxOvqw/exec";
 
   const fields = [
     "entry_date",
