@@ -1,69 +1,46 @@
-const modal = document.getElementById('passwordModal');
-const passwordInput = document.getElementById('modalPasswordInput');
-const submitBtn = document.getElementById('modalSubmitBtn');
-const cancelBtn = document.getElementById('modalCancelBtn');
-const errorMsg = document.getElementById('modalErrorMsg');
+document.addEventListener("DOMContentLoaded", () => {
+  const links = document.querySelectorAll(".password-protected");
+  const modal = document.getElementById("passwordModal");
+  const passwordInput = document.getElementById("modalPasswordInput");
+  const submitBtn = document.getElementById("modalSubmitBtn");
+  const cancelBtn = document.getElementById("modalCancelBtn");
+  const errorMsg = document.getElementById("modalErrorMsg");
 
-let targetPage = null;
-let targetPassword = null;
+  let targetPage = "";
+  let correctPassword = "";
 
-const protectedLinks = document.querySelectorAll('.password-protected');
+  links.forEach(link => {
+    link.addEventListener("click", event => {
+      event.preventDefault(); // ⛔️ Prevents link from opening index.html
+      targetPage = link.getAttribute("data-page");
+      correctPassword = link.getAttribute("data-password");
 
-protectedLinks.forEach(link => {
-  link.addEventListener('click', function(event) {
-    event.preventDefault();
-    targetPage = this.getAttribute('data-page');
-    targetPassword = this.getAttribute('data-password');
-    openModal();
+      modal.style.display = "block";
+      modal.setAttribute("aria-hidden", "false");
+      passwordInput.value = "";
+      errorMsg.style.display = "none";
+      passwordInput.focus();
+    });
   });
-});
 
-function openModal() {
-  modal.classList.add('show');
-  modal.setAttribute('aria-hidden', 'false');
-  passwordInput.value = '';
-  errorMsg.style.display = 'none';
-  passwordInput.focus();
-}
-
-function closeModal() {
-  modal.classList.remove('show');
-  modal.setAttribute('aria-hidden', 'true');
-  errorMsg.style.display = 'none';
-  targetPage = null;
-  targetPassword = null;
-}
-
-submitBtn.addEventListener('click', function() {
-  const entered = passwordInput.value;
-  if (entered === targetPassword) {
-    closeModal();
-    if (targetPage) {
+  submitBtn.addEventListener("click", () => {
+    if (passwordInput.value === correctPassword) {
       window.location.href = targetPage;
+    } else {
+      errorMsg.style.display = "block";
     }
-  } else {
-    errorMsg.style.display = 'block';
-    passwordInput.value = '';
-    passwordInput.focus();
-  }
-});
+  });
 
-cancelBtn.addEventListener('click', function() {
-  closeModal();
-});
+  cancelBtn.addEventListener("click", () => {
+    modal.style.display = "none";
+    modal.setAttribute("aria-hidden", "true");
+  });
 
-passwordInput.addEventListener('keydown', function(event) {
-  if (event.key === 'Enter') {
-    event.preventDefault();
-    submitBtn.click();
-  } else if (event.key === 'Escape') {
-    event.preventDefault();
-    closeModal();
-  }
-});
-
-modal.addEventListener('click', function(event) {
-  if (event.target === modal) {
-    closeModal();
-  }
+  // Optional: close modal on Esc key
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      modal.style.display = "none";
+      modal.setAttribute("aria-hidden", "true");
+    }
+  });
 });
