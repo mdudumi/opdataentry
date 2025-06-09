@@ -1,13 +1,15 @@
 document.addEventListener('DOMContentLoaded', () => {
   const form = document.getElementById('wellForm');
   const tableBody = document.querySelector('#previewTable tbody');
-  const padSelect = document.getElementById('pad'); // form pad
-  const wellSelect = document.getElementById('well'); // form well
+  const wellSelect = document.getElementById('well');
+  const padSelect = document.getElementById('pad');
   const dateFilter = document.getElementById('dateFilter');
   const padFilter = document.getElementById('padFilter');
   const wellFilter = document.getElementById('wellFilter');
   const toggleBtn = document.getElementById('toggleMode');
   const exportBtn = document.getElementById('exportBtn');
+
+  const API_URL = 'https://script.google.com/macros/s/AKfycbwu13xjG1I5LK_4dwkRKlxT8sp6NS2K0J4LS1NECE0wvqM9qoNMI2zRvcggqfAtkprlwg/exec'; // <-- put your deployed Google Apps Script Web App URL here
 
   const fields = [
     'entry_date', 'pad', 'well', 'tub_press', 'cas_press', 'speed', 'fluid_level',
@@ -15,34 +17,45 @@ document.addEventListener('DOMContentLoaded', () => {
     'bsw_tank', 'tank_temp', 'water_diluent', 'diesel_propane', 'chmc'
   ];
 
-  let entries = JSON.parse(localStorage.getItem('wellEntries') || '[]');
+  let entries = [];
 
-  // Handle form submission
-  form?.addEventListener('submit', (e) => {
+  async function fetchEntries() {
+    try {
+      const res = await fetch(API_URL);
+      if (!res.ok) throw new Error('Failed to fetch entries');
+      const data = await res.json();
+      entries = data;
+      renderTable();
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  async function addEntry(data) {
+    try {
+      const res = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error('Failed to add entry');
+      return await res.json();
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  form?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const data = {};
     fields.forEach(id => data[id] = form[id]?.value || '');
-    entries.push(data);
-    localStorage.setItem('wellEntries', JSON.stringify(entries));
-    renderTable();
+    await addEntry(data);
+    await fetchEntries();
     form.reset();
-    wellSelect.innerHTML = '<option value="">-- Select Well --</option>'; // reset wells
   });
 
-  // Dynamically generate form wells from pad
-  padSelect?.addEventListener('change', () => {
-    const pad = padSelect.value;
-    wellSelect.innerHTML = '<option value="">-- Select Well --</option>';
-    if (pad) {
-      for (let i = 1; i <= 5; i++) {
-        const well = `${pad}_Well_${i}`;
-        wellSelect.appendChild(new Option(well, well));
-      }
-    }
-  });
-
-  // Render filtered table
   function renderTable() {
+    tableBody.innerHTML = '';
     const dateVal = dateFilter.value;
     const padVal = padFilter.value;
     const wellVal = wellFilter.value;
@@ -53,19 +66,18 @@ document.addEventListener('DOMContentLoaded', () => {
       (!wellVal || e.well === wellVal)
     );
 
-    // Keep filters persistent
-    const updateFilter = (select, key, label, selectedVal) => {
-      const unique = [...new Set(entries.map(e => e[key]).filter(Boolean))];
-      select.innerHTML = `<option value="">${label}</option>` +
-        unique.map(v => `<option value="${v}">${v}</option>`).join('');
-      select.value = selectedVal;
-    };
+    // Fill filter dropdowns based on all entries
+    const uniqueOptions = (key) => [...new Set(entries.map(e => e[key]).filter(Boolean))];
 
-    updateFilter(dateFilter, 'entry_date', 'All Dates', dateVal);
-    updateFilter(padFilter, 'pad', 'All PADs', padVal);
-    updateFilter(wellFilter, 'well', 'All Wells', wellVal);
+    dateFilter.innerHTML = '<option value="">All Dates</option>' +
+      uniqueOptions('entry_date').map(v => `<option value="${v}">${v}</option>`).join('');
 
-    tableBody.innerHTML = '';
+    padFilter.innerHTML = '<option value="">All PADs</option>' +
+      uniqueOptions('pad').map(v => `<option value="${v}">${v}</option>`).join('');
+
+    wellFilter.innerHTML = '<option value="">All Wells</option>' +
+      uniqueOptions('well').map(v => `<option value="${v}">${v}</option>`).join('');
+
     filtered.forEach((entry, index) => {
       const row = document.createElement('tr');
       fields.forEach(key => {
@@ -73,8 +85,10 @@ document.addEventListener('DOMContentLoaded', () => {
         cell.textContent = entry[key];
         cell.contentEditable = true;
         cell.addEventListener('blur', () => {
-          entries[index][key] = cell.textContent.trim();
-          localStorage.setItem('wellEntries', JSON.stringify(entries));
+          // Update entry on blur (optional: implement update API in Apps Script)
+          entry[key] = cell.textContent.trim();
+          // Note: To persist edits back to Google Sheets, you'd need an update API endpoint.
+          // For now, edits only update UI.
         });
         row.appendChild(cell);
       });
@@ -83,9 +97,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const deleteBtn = document.createElement('button');
       deleteBtn.textContent = 'Delete';
       deleteBtn.onclick = () => {
-        entries.splice(index, 1);
-        localStorage.setItem('wellEntries', JSON.stringify(entries));
-        renderTable();
+        alert('Deleting entries via Google Sheets API requires a backend script with delete logic.');
+        // Optional: Implement delete logic in Apps Script for full CRUD
       };
       actionCell.appendChild(deleteBtn);
       row.appendChild(actionCell);
@@ -115,10 +128,20 @@ document.addEventListener('DOMContentLoaded', () => {
     URL.revokeObjectURL(url);
   });
 
-  // Re-render table when filters change
-  [dateFilter, padFilter, wellFilter].forEach(filter => {
-    filter?.addEventListener('change', renderTable);
+  padSelect?.addEventListener('change', () => {
+    const pad = padSelect.value;
+    wellSelect.innerHTML = '<option value="">-- Select Well --</option>';
+    if (pad) {
+      for (let i = 1; i <= 5; i++) {
+        const well = `${pad}_Well_${i}`;
+        const option = new Option(well, well);
+        wellSelect.appendChild(option);
+      }
+    }
   });
 
-  renderTable();
+  [dateFilter, padFilter, wellFilter].forEach(select => select?.addEventListener('change', renderTable));
+
+  // Load data initially
+  fetchEntries();
 });
