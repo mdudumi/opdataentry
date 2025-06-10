@@ -8,11 +8,11 @@ const port = 3000;
 
 // PostgreSQL connection pool
 const pool = new Pool({
-    user: 'postgres',
-    host: '34.32.41.224',
-    database: 'OPDES',
-    password: 'South123',
-    port: 5432,
+  user: process.env.PGUSER,
+  host: process.env.PGHOST,
+  database: process.env.PGDATABASE,
+  password: process.env.PGPASSWORD,
+  port: process.env.PGPORT,
 });
 
 // Middleware
