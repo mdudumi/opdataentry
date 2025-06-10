@@ -15,11 +15,12 @@ document.addEventListener('DOMContentLoaded', () => {
     'bsw_tank', 'tank_temp', 'water_diluent', 'diesel_propane', 'chmc'
   ];
 
-  const apiUrl = 'https://script.google.com/macros/s/AKfycbzpc-lUiRkvDn2V7UvURPskZssbGhGpYNG43AsUbymrHJQLJKW8ik77NMTMo9YayF6TLA/exec'; // Replace with your Apps Script URL
+  const apiUrl = 'YOUR_APPS_SCRIPT_URL'; // Replace with your Apps Script URL
 
   // Fetch data from Google Sheets
   async function fetchSheetData() {
     const response = await fetch(apiUrl);
+    if (!response.ok) throw new Error('Failed to fetch data.');
     return response.json();
   }
 
@@ -28,7 +29,16 @@ document.addEventListener('DOMContentLoaded', () => {
     await fetch(apiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
+      body: JSON.stringify({ action: 'append', data }),
+    });
+  }
+
+  // Delete data from Google Sheets
+  async function deleteRowFromSheet(rowIndex) {
+    await fetch(apiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'delete', row: rowIndex }),
     });
   }
 
@@ -58,9 +68,9 @@ document.addEventListener('DOMContentLoaded', () => {
     wellFilter.innerHTML = '<option value="">All Wells</option>' +
       uniqueOptions(2).map(v => `<option value="${v}">${v}</option>`).join('');
 
-    filtered.forEach(entry => {
+    filtered.forEach((entry, index) => {
       const row = document.createElement('tr');
-      entry.forEach((value, index) => {
+      entry.forEach((value) => {
         const cell = document.createElement('td');
         cell.textContent = value;
         row.appendChild(cell);
@@ -69,7 +79,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const deleteBtn = document.createElement('button');
       deleteBtn.textContent = 'Delete';
       deleteBtn.onclick = async () => {
-        console.log("Deleting rows isn't supported directly with this Apps Script setup.");
+        await deleteRowFromSheet(index);
+        renderTable();
       };
       actionCell.appendChild(deleteBtn);
       row.appendChild(actionCell);
