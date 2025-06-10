@@ -15,80 +15,76 @@ document.addEventListener('DOMContentLoaded', () => {
     'bsw_tank', 'tank_temp', 'water_diluent', 'diesel_propane', 'chmc'
   ];
 
-  const apiUrl = 'https://script.google.com/macros/s/AKfycbyhhk5FMTjnQukCZvUAvLY8Z7mDIYc-9cbg3o_lW8cwPBpSV88ZxFcZ0_oW1-zO-zfAxg/exec'; // Replace with your Apps Script URL
+  const apiUrl = 'YOUR_APPS_SCRIPT_URL'; // Replace with your Apps Script URL
 
   // Fetch data from Google Sheets
   async function fetchSheetData() {
     const response = await fetch(apiUrl);
-    if (!response.ok) throw new Error('Failed to fetch data.');
+    if (!response.ok) throw new Error('Failed to fetch data from Google Sheets.');
     return response.json();
   }
 
-  // Append data to Google Sheets
-  async function appendRowToSheet(data) {
+  // Append a row to Google Sheets
+  async function appendRowToSheet(row) {
     await fetch(apiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'append', data }),
+      body: JSON.stringify({ action: 'append', row }),
     });
   }
 
-  // Delete data from Google Sheets
+  // Update a row in Google Sheets
+  async function updateRowInSheet(rowIndex, row) {
+    await fetch(apiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'update', rowIndex, row }),
+    });
+  }
+
+  // Delete a row in Google Sheets
   async function deleteRowFromSheet(rowIndex) {
     await fetch(apiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'delete', row: rowIndex }),
+      body: JSON.stringify({ action: 'delete', rowIndex }),
     });
   }
 
-  // Render the table with data from Google Sheets
+  // Render the table
   async function renderTable() {
     const entries = await fetchSheetData();
     tableBody.innerHTML = '';
 
-    const dateVal = dateFilter.value;
-    const padVal = padFilter.value;
-    const wellVal = wellFilter.value;
-
-    const filtered = entries.filter(e =>
-      (!dateVal || e[0] === dateVal) &&
-      (!padVal || e[1] === padVal) &&
-      (!wellVal || e[2] === wellVal)
-    );
-
-    const uniqueOptions = (index) => [...new Set(entries.map(e => e[index]).filter(Boolean))];
-
-    dateFilter.innerHTML = '<option value="">All Dates</option>' +
-      uniqueOptions(0).map(v => `<option value="${v}">${v}</option>`).join('');
-
-    padFilter.innerHTML = '<option value="">All PADs</option>' +
-      uniqueOptions(1).map(v => `<option value="${v}">${v}</option>`).join('');
-
-    wellFilter.innerHTML = '<option value="">All Wells</option>' +
-      uniqueOptions(2).map(v => `<option value="${v}">${v}</option>`).join('');
-
-    filtered.forEach((entry, index) => {
+    entries.forEach((entry, rowIndex) => {
       const row = document.createElement('tr');
-      entry.forEach((value) => {
+      entry.forEach((value, colIndex) => {
         const cell = document.createElement('td');
         cell.textContent = value;
+        cell.contentEditable = true;
+        cell.addEventListener('blur', () => {
+          const updatedRow = [...row.children].map(td => td.textContent);
+          updateRowInSheet(rowIndex, updatedRow);
+        });
         row.appendChild(cell);
       });
+
+      // Add delete button
       const actionCell = document.createElement('td');
       const deleteBtn = document.createElement('button');
       deleteBtn.textContent = 'Delete';
       deleteBtn.onclick = async () => {
-        await deleteRowFromSheet(index);
+        await deleteRowFromSheet(rowIndex);
         renderTable();
       };
       actionCell.appendChild(deleteBtn);
       row.appendChild(actionCell);
+
       tableBody.appendChild(row);
     });
   }
 
-  // Submit the form and add data to Google Sheets
+  // Handle form submission
   form?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const data = fields.map(id => form[id]?.value || '');
@@ -96,46 +92,6 @@ document.addEventListener('DOMContentLoaded', () => {
     form.reset();
     renderTable();
   });
-
-  // Toggle dark mode
-  toggleBtn?.addEventListener('click', () => {
-    document.body.classList.toggle('dark-mode');
-  });
-
-  // Export table data to CSV (only front-end export)
-  exportBtn?.addEventListener('click', async () => {
-    const entries = await fetchSheetData();
-    const headers = fields;
-    let csv = headers.join(',') + '\n';
-    entries.forEach(entry => {
-      csv += entry.join(',') + '\n';
-    });
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'well_data.csv';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  });
-
-  // Pad and well dropdown linkage
-  padSelect?.addEventListener('change', () => {
-    const pad = padSelect.value;
-    wellSelect.innerHTML = '<option value="">-- Select Well --</option>';
-    if (pad) {
-      for (let i = 1; i <= 5; i++) {
-        const well = `${pad}_Well_${i}`;
-        const option = new Option(well, well);
-        wellSelect.appendChild(option);
-      }
-    }
-  });
-
-  // Apply filters and update the table
-  [dateFilter, padFilter, wellFilter].forEach(select => select?.addEventListener('change', renderTable));
 
   // Initial table render
   renderTable();
