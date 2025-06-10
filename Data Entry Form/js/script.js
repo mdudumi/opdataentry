@@ -15,60 +15,61 @@ document.addEventListener('DOMContentLoaded', () => {
     'bsw_tank', 'tank_temp', 'water_diluent', 'diesel_propane', 'chmc'
   ];
 
-  let entries = JSON.parse(localStorage.getItem('wellEntries') || '[]');
+  const apiUrl = 'YOUR_APPS_SCRIPT_URL'; // Replace with your Apps Script URL
 
-  form?.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const data = {};
-    fields.forEach(id => data[id] = form[id]?.value || '');
-    entries.push(data);
-    localStorage.setItem('wellEntries', JSON.stringify(entries));
-    renderTable();
-    form.reset();
-  });
+  // Fetch data from Google Sheets
+  async function fetchSheetData() {
+    const response = await fetch(apiUrl);
+    return response.json();
+  }
 
-  function renderTable() {
+  // Append data to Google Sheets
+  async function appendRowToSheet(data) {
+    await fetch(apiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+  }
+
+  // Render the table with data from Google Sheets
+  async function renderTable() {
+    const entries = await fetchSheetData();
     tableBody.innerHTML = '';
+
     const dateVal = dateFilter.value;
     const padVal = padFilter.value;
     const wellVal = wellFilter.value;
 
     const filtered = entries.filter(e =>
-      (!dateVal || e.entry_date === dateVal) &&
-      (!padVal || e.pad === padVal) &&
-      (!wellVal || e.well === wellVal)
+      (!dateVal || e[0] === dateVal) &&
+      (!padVal || e[1] === padVal) &&
+      (!wellVal || e[2] === wellVal)
     );
 
-    const uniqueOptions = (key) => [...new Set(entries.map(e => e[key]).filter(Boolean))];
+    const uniqueOptions = (index) => [...new Set(entries.map(e => e[index]).filter(Boolean))];
 
     dateFilter.innerHTML = '<option value="">All Dates</option>' +
-      uniqueOptions('entry_date').map(v => `<option value="${v}">${v}</option>`).join('');
+      uniqueOptions(0).map(v => `<option value="${v}">${v}</option>`).join('');
 
     padFilter.innerHTML = '<option value="">All PADs</option>' +
-      uniqueOptions('pad').map(v => `<option value="${v}">${v}</option>`).join('');
+      uniqueOptions(1).map(v => `<option value="${v}">${v}</option>`).join('');
 
     wellFilter.innerHTML = '<option value="">All Wells</option>' +
-      uniqueOptions('well').map(v => `<option value="${v}">${v}</option>`).join('');
+      uniqueOptions(2).map(v => `<option value="${v}">${v}</option>`).join('');
 
-    filtered.forEach((entry, index) => {
+    filtered.forEach(entry => {
       const row = document.createElement('tr');
-      fields.forEach(key => {
+      entry.forEach((value, index) => {
         const cell = document.createElement('td');
-        cell.textContent = entry[key];
-        cell.contentEditable = true;
-        cell.addEventListener('blur', () => {
-          entries[index][key] = cell.textContent.trim();
-          localStorage.setItem('wellEntries', JSON.stringify(entries));
-        });
+        cell.textContent = value;
         row.appendChild(cell);
       });
       const actionCell = document.createElement('td');
       const deleteBtn = document.createElement('button');
       deleteBtn.textContent = 'Delete';
-      deleteBtn.onclick = () => {
-        entries.splice(index, 1);
-        localStorage.setItem('wellEntries', JSON.stringify(entries));
-        renderTable();
+      deleteBtn.onclick = async () => {
+        console.log("Deleting rows isn't supported directly with this Apps Script setup.");
       };
       actionCell.appendChild(deleteBtn);
       row.appendChild(actionCell);
@@ -76,16 +77,27 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // Submit the form and add data to Google Sheets
+  form?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const data = fields.map(id => form[id]?.value || '');
+    await appendRowToSheet(data);
+    form.reset();
+    renderTable();
+  });
+
+  // Toggle dark mode
   toggleBtn?.addEventListener('click', () => {
     document.body.classList.toggle('dark-mode');
   });
 
-  exportBtn?.addEventListener('click', () => {
-    const headers = [...fields];
+  // Export table data to CSV (only front-end export)
+  exportBtn?.addEventListener('click', async () => {
+    const entries = await fetchSheetData();
+    const headers = fields;
     let csv = headers.join(',') + '\n';
     entries.forEach(entry => {
-      const values = fields.map(f => '"' + (entry[f] || '') + '"');
-      csv += values.join(',') + '\n';
+      csv += entry.join(',') + '\n';
     });
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
@@ -98,6 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
     URL.revokeObjectURL(url);
   });
 
+  // Pad and well dropdown linkage
   padSelect?.addEventListener('change', () => {
     const pad = padSelect.value;
     wellSelect.innerHTML = '<option value="">-- Select Well --</option>';
@@ -110,7 +123,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // Apply filters and update the table
   [dateFilter, padFilter, wellFilter].forEach(select => select?.addEventListener('change', renderTable));
 
+  // Initial table render
   renderTable();
 });
