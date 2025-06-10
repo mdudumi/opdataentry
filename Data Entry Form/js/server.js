@@ -16,7 +16,7 @@ const pool = new Pool({
 });
 
 // Middleware
-app.use(cors());
+app.use(cors({ origin: 'https://opdes.netlify.app/south1.html' }));
 app.use(bodyParser.json());
 
 // API Endpoints
@@ -57,6 +57,47 @@ app.delete('/entries/:id', async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Database delete error' });
+    }
+});
+
+app.put('/entries/:id', async (req, res) => {
+    const id = req.params.id;
+    const data = req.body;
+
+    try {
+        await pool.query(
+            `UPDATE south1_entries SET 
+                entry_date = $1,
+                pad = $2,
+                well = $3,
+                tub_press = $4,
+                cas_press = $5,
+                speed = $6,
+                fluid_level = $7,
+                torque = $8,
+                oil_press = $9,
+                oil_level = $10,
+                frecuenze = $11,
+                tank_volume = $12,
+                free_water = $13,
+                bsw_tank = $14,
+                tank_temp = $15,
+                water_diluent = $16,
+                diesel_propane = $17,
+                chmc = $18
+            WHERE id = $19`,
+            [
+                data.entry_date, data.pad, data.well, data.tub_press, data.cas_press,
+                data.speed, data.fluid_level, data.torque, data.oil_press, data.oil_level,
+                data.frecuenze, data.tank_volume, data.free_water, data.bsw_tank,
+                data.tank_temp, data.water_diluent, data.diesel_propane, data.chmc,
+                id
+            ]
+        );
+        res.status(200).json({ message: 'Entry updated successfully' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Database update error' });
     }
 });
 
