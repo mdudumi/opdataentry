@@ -8,10 +8,10 @@ const port = 3000;
 
 // PostgreSQL connection pool
 const pool = new Pool({
-    user: '<DB_USER>',
-    host: '<DB_HOST>',
-    database: '<DB_NAME>',
-    password: '<DB_PASSWORD>',
+    user: 'postgres',
+    host: '34.32.41.224',
+    database: 'OPDES',
+    password: 'Amoelona1#?',
     port: 5432,
 });
 
