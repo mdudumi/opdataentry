@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
     'bsw_tank', 'tank_temp', 'water_diluent', 'diesel_propane', 'chmc'
   ];
 
-  const apiUrl = 'YOUR_APPS_SCRIPT_URL'; // Replace with your Apps Script URL
+  const apiUrl = 'https://script.google.com/macros/s/AKfycbzpc-lUiRkvDn2V7UvURPskZssbGhGpYNG43AsUbymrHJQLJKW8ik77NMTMo9YayF6TLA/exec'; // Replace with your Apps Script URL
 
   // Fetch data from Google Sheets
   async function fetchSheetData() {
