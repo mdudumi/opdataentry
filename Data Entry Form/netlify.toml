@@ -1,2 +1,5 @@
 [build]
+  # where your index.html / south1.html lives
+  publish   = "Data Entry Form"
+  # folder for your serverless functions
   functions = "functions"
