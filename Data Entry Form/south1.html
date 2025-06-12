@@ -125,5 +125,74 @@
   </div>
 
   <script src="js/script.js"></script>
+  <script>
+    // map your Postgres column names → the IDs you gave your inputs
+    const columnToInputId = {
+      entry_date:      'entry_date',
+      pad:             'pad',
+      well:            'well',
+      tubing_pressure: 'tub_press',
+      casing_pressure: 'cas_press',
+      speed:           'speed',
+      fluid_level:     'fluid_level',
+      torque:          'torque',
+      oil_pressure:    'oil_press',
+      oil_level:       'oil_level',
+      frequency:       'frecuenze',
+      tank_volume:     'tank_volume',
+      free_water:      'free_water',
+      bsw_tank:        'bsw_tank',
+      tank_temp:       'tank_temp',
+      water_diluent:   'water_diluent',
+      diesel_propane:  'diesel_propane',
+      chmc:            'chmc'
+    };
+
+    // 1) load the latest entry and fill the form
+    async function loadEntry() {
+      const res  = await fetch('/.netlify/functions/getentries');
+      const rows = await res.json();
+      const e    = rows[0] || {};
+      // for each column, find the matching input and set its value
+      Object.entries(columnToInputId).forEach(([col, id]) => {
+        const input = document.getElementById(id);
+        if (!input) return;
+        // if it's a date input, strip time off
+        input.value = e[col] != null
+          ? (col === 'entry_date'
+              ? new Date(e[col]).toISOString().slice(0,10)
+              : e[col])
+          : '';
+      });
+      // stash the PK so update knows which row to touch
+      if (e.id) document.getElementById('wellForm').dataset.id = e.id;
+    }
+
+    // 2) on submit, POST everything back to updateEntry
+    document.getElementById('wellForm').addEventListener('submit', async ev => {
+      ev.preventDefault();
+      const form = ev.target;
+      const payload = { id: form.dataset.id }; 
+      // collect all the form fields
+      Object.entries(columnToInputId).forEach(([col, id]) => {
+        payload[col] = document.getElementById(id).value;
+      });
+
+      const upd = await fetch('/.netlify/functions/updateEntry', {
+        method: 'POST',
+        body:   JSON.stringify(payload),
+      });
+
+      if (upd.ok) {
+        alert('✅ Saved!');
+        loadEntry();   // refresh in case anything changed
+      } else {
+        alert('❌ Error: ' + await upd.text());
+      }
+    });
+
+    // run on page load
+    window.addEventListener('DOMContentLoaded', loadEntry);
+  </script>
 </body>
 </html>
