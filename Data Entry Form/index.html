@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Select Your Zone • Runsheet</title>
+  <title>Select Your Zone • OPDES v.1.0</title>
   <link rel="stylesheet" href="css/index.css" />
 </head>
 <body>
   <div class="card">
-    <h1>Welcome</h1>
+    <h1>Welcome to OPDES v.1.0</h1>
     <p>Select your route zone and sign in to continue</p>
     <form id="loginForm">
       <div>
@@ -22,17 +22,30 @@
       </div>
       <div>
         <label for="zonePassword">Zone Password</label>
-        <input id="zonePassword" name="zonePassword" type="password" required placeholder="Enter zone password" />
+        <input
+          id="zonePassword"
+          name="zonePassword"
+          type="password"
+          required
+          placeholder="Enter zone password"
+        />
       </div>
       <div>
         <label for="userEmail">Email</label>
-        <input id="userEmail" name="userEmail" type="email" required placeholder="you@example.com" />
+        <input
+          id="userEmail"
+          name="userEmail"
+          type="email"
+          required
+          placeholder="you@example.com"
+        />
       </div>
       <div class="error" id="errorMsg"></div>
       <button type="submit">Continue</button>
     </form>
   </div>
 
-  <script src="js/index.js"></script>
+  <script src="js/index.js" defer></script>
 </body>
 </html>
+
