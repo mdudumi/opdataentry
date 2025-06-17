@@ -3,8 +3,7 @@
 // — Your Supabase credentials —
 const SUPABASE_URL = 'https://nrkakpjugxncfyrgtpfr.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ya2FrcGp1Z3huY2Z5cmd0cGZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAxOTMyNjcsImV4cCI6MjA2NTc2OTI2N30.FzWYbNT792RH6rpxSr9OKlcjMV6qIuVL4oq_W9lsmQs';
-
-// — Initialize client —
+// — Initialize the Supabase client —
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -19,7 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const toggleBtn  = document.getElementById('toggleMode');
   const exportBtn  = document.getElementById('exportBtn');
 
-  // — Field list —
+  // — Field names matching your form —
   const fields = [
     'entry_date','pad','well','tub_press','cas_press','speed','fluid_level',
     'torque','oil_press','oil_level','frecuenze','tank_volume','free_water',
@@ -28,7 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let entries = [];
 
-  // 🔄 Dynamic Pad → Well
+  // 🔄 Dynamic Pad → Well dropdown
   padSelect?.addEventListener('change', () => {
     wellSelect.innerHTML = '<option value="">-- Select Well --</option>';
     if (!padSelect.value) return;
@@ -38,34 +37,34 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // 🚀 Load all entries
+  // 🚀 Fetch all existing entries
   async function loadEntries() {
     const { data, error } = await supabaseClient
       .from('south1_entries')
       .select('*')
       .order('created_at', { ascending: false });
-    if (error) return console.error('Fetch error:', error);
+    if (error) {
+      console.error('Fetch error:', error);
+      return;
+    }
     entries = data;
     renderTable();
   }
 
-  // 🔔 Realtime for INSERT, UPDATE, DELETE
+  // 🔔 Realtime subscription for INSERT, UPDATE, DELETE
   supabaseClient
     .channel('public:south1_entries')
-    // INSERT
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'south1_entries' },
       ({ new: row }) => {
         entries.unshift(row);
         renderTable();
       })
-    // UPDATE
     .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'south1_entries' },
       ({ new: row }) => {
         const idx = entries.findIndex(e => e.id === row.id);
         if (idx > -1) entries[idx] = row;
         renderTable();
       })
-    // DELETE
     .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'south1_entries' },
       ({ old: row }) => {
         entries = entries.filter(e => e.id !== row.id);
@@ -73,10 +72,11 @@ document.addEventListener('DOMContentLoaded', () => {
       })
     .subscribe();
 
+  // initial load
   loadEntries();
 
-  // ➕ Insert + immediate UI update
-  form?.addEventListener('submit', async e => {
+  // ➕ Handle form submission → INSERT + immediate UI update
+  form?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const payload = {};
     fields.forEach(f => {
@@ -87,37 +87,52 @@ document.addEventListener('DOMContentLoaded', () => {
       .from('south1_entries')
       .insert([payload])
       .select();
+
     if (error) {
       console.error('Insert error:', error);
       return alert(`Insert failed: ${error.message}`);
     }
 
-    // local update & render
     entries.unshift(data[0]);
     renderTable();
     form.reset();
   });
 
-  // 📊 Render + filters + inline-edit + delete
+  // 📊 Render table with filters, inline-edit, delete
   function renderTable() {
     tableBody.innerHTML = '';
-    const df = dateFilter.value || '';
-    const pf = padFilter.value    || '';
-    const wf = wellFilter.value   || '';
 
-    // rebuild filter dropdowns
+    // 1️⃣ Rebuild filter dropdowns, preserving current selection
     const uniq = key => [...new Set(entries.map(e => e[key]).filter(Boolean))];
-    if (dateFilter) dateFilter.innerHTML =
-      `<option value="">All Dates</option>` +
-      uniq('entry_date').map(v => `<option>${v}</option>`).join('');
-    if (padFilter)  padFilter.innerHTML  =
-      `<option value="">All PADs</option>` +
-      uniq('pad').map(v => `<option>${v}</option>`).join('');
-    if (wellFilter) wellFilter.innerHTML =
-      `<option value="">All Wells</option>` +
-      uniq('well').map(v => `<option>${v}</option>`).join('');
 
-    // draw rows
+    if (dateFilter) {
+      const prev = dateFilter.value;
+      dateFilter.innerHTML =
+        `<option value="">All Dates</option>` +
+        uniq('entry_date').map(v => `<option value="${v}">${v}</option>`).join('');
+      dateFilter.value = prev;
+    }
+    if (padFilter) {
+      const prev = padFilter.value;
+      padFilter.innerHTML =
+        `<option value="">All PADs</option>` +
+        uniq('pad').map(v => `<option value="${v}">${v}</option>`).join('');
+      padFilter.value = prev;
+    }
+    if (wellFilter) {
+      const prev = wellFilter.value;
+      wellFilter.innerHTML =
+        `<option value="">All Wells</option>` +
+        uniq('well').map(v => `<option value="${v}">${v}</option>`).join('');
+      wellFilter.value = prev;
+    }
+
+    // 2️⃣ Read current filter values
+    const df = dateFilter.value;
+    const pf = padFilter.value;
+    const wf = wellFilter.value;
+
+    // 3️⃣ Filter & render rows
     entries
       .filter(e =>
         (!df || e.entry_date === df) &&
@@ -126,7 +141,8 @@ document.addEventListener('DOMContentLoaded', () => {
       )
       .forEach(entry => {
         const tr = document.createElement('tr');
-        // cells
+
+        // cells (inline-editable)
         fields.forEach(key => {
           const td = document.createElement('td');
           td.textContent     = entry[key] ?? '';
@@ -148,7 +164,7 @@ document.addEventListener('DOMContentLoaded', () => {
           tr.appendChild(td);
         });
 
-        // delete btn
+        // delete button
         const actionTd = document.createElement('td');
         const delBtn   = document.createElement('button');
         delBtn.textContent = 'Delete';
@@ -171,7 +187,7 @@ document.addEventListener('DOMContentLoaded', () => {
       });
   }
 
-  // 📥 CSV export
+  // 📥 Export CSV
   exportBtn?.addEventListener('click', () => {
     const header = fields.join(',');
     const rows = entries.map(e => fields.map(f => e[f] ?? '').join(','));
@@ -182,7 +198,7 @@ document.addEventListener('DOMContentLoaded', () => {
     a.click();
   });
 
-  // 🔍 Filters & 🌙 Dark mode
+  // 🔍 Filters & 🌙 Dark-mode toggle
   [dateFilter, padFilter, wellFilter].forEach(el =>
     el?.addEventListener('change', renderTable)
   );
