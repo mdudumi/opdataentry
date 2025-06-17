@@ -6,8 +6,19 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 // — Initialize the Supabase client —
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-document.addEventListener('DOMContentLoaded', () => {
-  // — DOM nodes —
+document.addEventListener('DOMContentLoaded', async () => {
+  // ─────────────────────────────────────
+  // 1️⃣ Get the current user session
+  // ─────────────────────────────────────
+  const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
+  if (sessionError) {
+    console.error('Auth error:', sessionError);
+  }
+  const currentUser = session?.user; // { id, email, ... }
+
+  // ─────────────────────────────────────
+  // 2️⃣ Grab DOM nodes
+  // ─────────────────────────────────────
   const form       = document.getElementById('wellForm');
   const padSelect  = document.getElementById('pad');
   const wellSelect = document.getElementById('well');
@@ -18,16 +29,21 @@ document.addEventListener('DOMContentLoaded', () => {
   const toggleBtn  = document.getElementById('toggleMode');
   const exportBtn  = document.getElementById('exportBtn');
 
-  // — Field names matching your form —
+  // ─────────────────────────────────────
+  // 3️⃣ Define form‐field keys
+  // ─────────────────────────────────────
   const fields = [
     'entry_date','pad','well','tub_press','cas_press','speed','fluid_level',
     'torque','oil_press','oil_level','frecuenze','tank_volume','free_water',
     'bsw_tank','tank_temp','water_diluent','diesel_propane','chmc'
   ];
 
+  // Local cache of rows
   let entries = [];
 
-  // 🔄 Dynamic Pad → Well dropdown
+  // ─────────────────────────────────────
+  // 4️⃣ Dynamic Pad → Well dropdown
+  // ─────────────────────────────────────
   padSelect?.addEventListener('change', () => {
     wellSelect.innerHTML = '<option value="">-- Select Well --</option>';
     if (!padSelect.value) return;
@@ -37,7 +53,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // 🚀 Fetch all existing entries
+  // ─────────────────────────────────────
+  // 5️⃣ Load all entries from Supabase
+  // ─────────────────────────────────────
   async function loadEntries() {
     const { data, error } = await supabaseClient
       .from('south1_entries')
@@ -51,7 +69,9 @@ document.addEventListener('DOMContentLoaded', () => {
     renderTable();
   }
 
-  // 🔔 Realtime subscription for INSERT, UPDATE, DELETE
+  // ─────────────────────────────────────
+  // 6️⃣ Real‐time subscription (INSERT/UPDATE/DELETE)
+  // ─────────────────────────────────────
   supabaseClient
     .channel('public:south1_entries')
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'south1_entries' },
@@ -72,17 +92,22 @@ document.addEventListener('DOMContentLoaded', () => {
       })
     .subscribe();
 
-  // initial load
+  // initial fetch
   loadEntries();
 
-  // ➕ Handle form submission → INSERT + immediate UI update
+  // ─────────────────────────────────────
+  // 7️⃣ Handle form submission (INSERT)
+  // ─────────────────────────────────────
   form?.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const payload = {};
+
+    // Build payload including user_id
+    const payload = { user_id: currentUser?.id || null };
     fields.forEach(f => {
       payload[f] = form.elements[f]?.value || null;
     });
 
+    // Insert and return the new row
     const { data, error } = await supabaseClient
       .from('south1_entries')
       .insert([payload])
@@ -93,16 +118,19 @@ document.addEventListener('DOMContentLoaded', () => {
       return alert(`Insert failed: ${error.message}`);
     }
 
+    // Update local cache & re‐render
     entries.unshift(data[0]);
     renderTable();
     form.reset();
   });
 
-  // 📊 Render table with filters, inline-edit, delete
+  // ─────────────────────────────────────
+  // 8️⃣ Render table + filters + inline‐edit + delete
+  // ─────────────────────────────────────
   function renderTable() {
     tableBody.innerHTML = '';
 
-    // 1️⃣ Rebuild filter dropdowns, preserving current selection
+    // a) Rebuild filter dropdowns and preserve selection
     const uniq = key => [...new Set(entries.map(e => e[key]).filter(Boolean))];
 
     if (dateFilter) {
@@ -127,12 +155,12 @@ document.addEventListener('DOMContentLoaded', () => {
       wellFilter.value = prev;
     }
 
-    // 2️⃣ Read current filter values
+    // b) Get current filter values
     const df = dateFilter.value;
     const pf = padFilter.value;
     const wf = wellFilter.value;
 
-    // 3️⃣ Filter & render rows
+    // c) Filter and draw rows
     entries
       .filter(e =>
         (!df || e.entry_date === df) &&
@@ -142,63 +170,79 @@ document.addEventListener('DOMContentLoaded', () => {
       .forEach(entry => {
         const tr = document.createElement('tr');
 
-        // cells (inline-editable)
+        // Data cells
         fields.forEach(key => {
           const td = document.createElement('td');
-          td.textContent     = entry[key] ?? '';
-          td.contentEditable = true;
-          td.addEventListener('blur', async () => {
-            const newVal = td.textContent.trim() || null;
-            if (newVal === entry[key]) return;
-            const { error } = await supabaseClient
-              .from('south1_entries')
-              .update({ [key]: newVal })
-              .eq('id', entry.id);
-            if (error) {
-              console.error('Update failed:', error);
-              return alert(`Update failed: ${error.message}`);
-            }
-            entry[key] = newVal;
-            renderTable();
-          });
+          td.textContent = entry[key] ?? '';
+
+          // Only make editable if this row belongs to currentUser
+          if (entry.user_id === currentUser?.id) {
+            td.contentEditable = true;
+            td.addEventListener('blur', async () => {
+              const newVal = td.textContent.trim() || null;
+              if (newVal === entry[key]) return;
+              const { error } = await supabaseClient
+                .from('south1_entries')
+                .update({ [key]: newVal })
+                .eq('id', entry.id);
+              if (error) {
+                console.error('Update failed:', error);
+                alert(`Update failed: ${error.message}`);
+              } else {
+                entry[key] = newVal;
+                renderTable();
+              }
+            });
+          }
+
           tr.appendChild(td);
         });
 
-        // delete button
+        // Action cell (delete only if owner)
         const actionTd = document.createElement('td');
-        const delBtn   = document.createElement('button');
-        delBtn.textContent = 'Delete';
-        delBtn.addEventListener('click', async () => {
-          const { error } = await supabaseClient
-            .from('south1_entries')
-            .delete()
-            .eq('id', entry.id);
-          if (error) {
-            console.error('Delete failed:', error);
-            return alert(`Delete failed: ${error.message}`);
-          }
-          entries = entries.filter(e => e.id !== entry.id);
-          renderTable();
-        });
-        actionTd.appendChild(delBtn);
+        if (entry.user_id === currentUser?.id) {
+          const delBtn = document.createElement('button');
+          delBtn.textContent = 'Delete';
+          delBtn.addEventListener('click', async () => {
+            const { error } = await supabaseClient
+              .from('south1_entries')
+              .delete()
+              .eq('id', entry.id);
+            if (error) {
+              console.error('Delete failed:', error);
+              alert(`Delete failed: ${error.message}`);
+            } else {
+              entries = entries.filter(e => e.id !== entry.id);
+              renderTable();
+            }
+          });
+          actionTd.appendChild(delBtn);
+        }
         tr.appendChild(actionTd);
 
         tableBody.appendChild(tr);
       });
   }
 
-  // 📥 Export CSV
+  // ─────────────────────────────────────
+  // 9️⃣ Export CSV
+  // ─────────────────────────────────────
   exportBtn?.addEventListener('click', () => {
-    const header = fields.join(',');
-    const rows = entries.map(e => fields.map(f => e[f] ?? '').join(','));
+    const header = ['user_id', ...fields].join(',');
+    const rows = entries.map(e =>
+      [e.user_id, ...fields.map(f => e[f] ?? '')].join(',')
+    );
     const csv = [header, ...rows].join('\n');
-    const a = document.createElement('a');
-    a.href     = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const a    = document.createElement('a');
+    a.href     = URL.createObjectURL(blob);
     a.download = 'south1_data.csv';
     a.click();
   });
 
-  // 🔍 Filters & 🌙 Dark-mode toggle
+  // ─────────────────────────────────────
+  // 🔍 Filters & 🌙 Dark‐mode toggle
+  // ─────────────────────────────────────
   [dateFilter, padFilter, wellFilter].forEach(el =>
     el?.addEventListener('change', renderTable)
   );
