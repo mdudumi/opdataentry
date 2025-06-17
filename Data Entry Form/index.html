@@ -2,30 +2,37 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <title>Select Route Zone • SOUTH 1 Runsheet</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Sign In • SOUTH 1 Runsheet</title>
   <link rel="stylesheet" href="css/index.css" />
   <style>
-    /* Ensure the modal is visible on load */
-    #loginModal.show {
-      display: flex;
-    }
+    /* show the modal by default */
+    #loginModal.show { display: flex; }
   </style>
 </head>
 <body>
-  <!-- Login Modal -->
-  <div
-    id="loginModal"
-    class="modal show"
-    aria-hidden="false"
-    role="dialog"
-    aria-labelledby="loginTitle"
-    aria-describedby="loginDesc"
-  >
-    <div class="modal-content" role="document">
-      <h2 id="loginTitle">Sign In</h2>
-      <p id="loginDesc">Please enter your email to continue</p>
+  <!-- Login / Zone-Select Modal -->
+  <div id="loginModal" class="modal show" role="dialog" aria-modal="true">
+    <div class="modal-content">
+      <h2>Select Your Route Zone</h2>
       <form id="loginForm">
+        <label for="routeZone">Route Zone</label>
+        <select id="routeZone" name="routeZone" required>
+          <option value="">— pick a zone —</option>
+          <option value="south1">South 1</option>
+          <option value="north1">North 1</option>
+          <option value="central1">Central 1</option>
+        </select>
+
+        <label for="zonePassword">Zone Password</label>
+        <input
+          id="zonePassword"
+          name="zonePassword"
+          type="password"
+          required
+          placeholder="Enter zone password"
+        />
+
         <label for="userEmail">Email</label>
         <input
           id="userEmail"
@@ -34,23 +41,51 @@
           required
           placeholder="you@example.com"
         />
-        <div class="modal-buttons" style="margin-top:1rem; justify-content:flex-end;">
-          <button type="submit">Continue</button>
-        </div>
+
+        <button type="submit">Continue</button>
+        <div id="errorMsg" class="error" style="display:none;color:red;margin-top:0.5rem;"></div>
       </form>
     </div>
   </div>
 
   <script>
+    // ‣ Map each zone to its password (replace with your real passwords)
+    const zonePasswords = {
+      south1: 'south1pass',
+      north1: 'north1pass',
+      central1: 'central1pass'
+    };
+
     document.getElementById('loginForm').addEventListener('submit', e => {
       e.preventDefault();
-      const email = e.target.userEmail.value.trim();
-      // Store for south1.html to pick up
+      const form     = e.target;
+      const zone     = form.routeZone.value;
+      const zpass    = form.zonePassword.value;
+      const email    = form.userEmail.value.trim();
+      const errDiv   = document.getElementById('errorMsg');
+
+      // 1) Validate zone selection
+      if (!zone || !zonePasswords[zone]) {
+        errDiv.textContent = 'Please select a valid zone.';
+        errDiv.style.display = 'block';
+        return;
+      }
+      // 2) Validate password for that zone
+      if (zpass !== zonePasswords[zone]) {
+        errDiv.textContent = 'Incorrect zone password.';
+        errDiv.style.display = 'block';
+        return;
+      }
+
+      // Passed—store and redirect
       sessionStorage.setItem('userEmail', email);
-      // Hide the modal
+      sessionStorage.setItem('routeZone', zone);
+
+      // hide modal briefly
       document.getElementById('loginModal').classList.remove('show');
-      // Redirect to the runsheet page
-      window.location.href = 'south1.html';
+
+      // go to the appropriate page
+      window.location.href = `${zone}.html`;
     });
   </script>
 </body>
