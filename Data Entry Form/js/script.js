@@ -4,7 +4,7 @@
 const SUPABASE_URL = 'https://nrkakpjugxncfyrgtpfr.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ya2FrcGp1Z3huY2Z5cmd0cGZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAxOTMyNjcsImV4cCI6MjA2NTc2OTI2N30.FzWYbNT792RH6rpxSr9OKlcjMV6qIuVL4oq_W9lsmQs';
 
-// — Initialize client under its own name —
+// — Initialize client —
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -28,7 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let entries = [];
 
-  // 🔄 Dynamic Pad → Well dropdown
+  // 🔄 Dynamic Pad → Well
   padSelect?.addEventListener('change', () => {
     wellSelect.innerHTML = '<option value="">-- Select Well --</option>';
     if (!padSelect.value) return;
@@ -38,63 +38,67 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // 🚀 Fetch existing entries from Supabase
+  // 🚀 Load all entries
   async function loadEntries() {
     const { data, error } = await supabaseClient
       .from('south1_entries')
       .select('*')
       .order('created_at', { ascending: false });
-    if (error) {
-      console.error('Fetch error:', error);
-      return;
-    }
+    if (error) return console.error('Fetch error:', error);
     entries = data;
     renderTable();
   }
 
-  // 🔔 Realtime subscription for INSERTs
+  // 🔔 Realtime for INSERT, UPDATE, DELETE
   supabaseClient
     .channel('public:south1_entries')
-    .on(
-      'postgres_changes',
-      { event: 'INSERT', schema: 'public', table: 'south1_entries' },
+    // INSERT
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'south1_entries' },
       ({ new: row }) => {
         entries.unshift(row);
         renderTable();
-      }
-    )
+      })
+    // UPDATE
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'south1_entries' },
+      ({ new: row }) => {
+        const idx = entries.findIndex(e => e.id === row.id);
+        if (idx > -1) entries[idx] = row;
+        renderTable();
+      })
+    // DELETE
+    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'south1_entries' },
+      ({ old: row }) => {
+        entries = entries.filter(e => e.id !== row.id);
+        renderTable();
+      })
     .subscribe();
 
-  // initial load
   loadEntries();
 
-  // ➕ Handle form submission → INSERT into Supabase
-  form?.addEventListener('submit', async (e) => {
+  // ➕ Insert + immediate UI update
+  form?.addEventListener('submit', async e => {
     e.preventDefault();
     const payload = {};
     fields.forEach(f => {
-      const el = form.elements[f];
-      payload[f] = el ? el.value || null : null;
+      payload[f] = form.elements[f]?.value || null;
     });
 
     const { data, error } = await supabaseClient
       .from('south1_entries')
       .insert([payload])
-      .select(); // return the new row
-
+      .select();
     if (error) {
       console.error('Insert error:', error);
-      alert(`Insert failed: ${error.message}`);
-      return;
+      return alert(`Insert failed: ${error.message}`);
     }
 
-    // immediately show it in the table
+    // local update & render
     entries.unshift(data[0]);
     renderTable();
     form.reset();
   });
 
-  // 📊 Render table (with filters, inline-edit & delete)
+  // 📊 Render + filters + inline-edit + delete
   function renderTable() {
     tableBody.innerHTML = '';
     const df = dateFilter.value || '';
@@ -113,17 +117,16 @@ document.addEventListener('DOMContentLoaded', () => {
       `<option value="">All Wells</option>` +
       uniq('well').map(v => `<option>${v}</option>`).join('');
 
-    // filter & draw rows
+    // draw rows
     entries
       .filter(e =>
         (!df || e.entry_date === df) &&
         (!pf || e.pad        === pf) &&
         (!wf || e.well       === wf)
       )
-      .forEach((entry, i) => {
+      .forEach(entry => {
         const tr = document.createElement('tr');
-
-        // data cells (inline-editable)
+        // cells
         fields.forEach(key => {
           const td = document.createElement('td');
           td.textContent     = entry[key] ?? '';
@@ -131,23 +134,21 @@ document.addEventListener('DOMContentLoaded', () => {
           td.addEventListener('blur', async () => {
             const newVal = td.textContent.trim() || null;
             if (newVal === entry[key]) return;
-
             const { error } = await supabaseClient
               .from('south1_entries')
               .update({ [key]: newVal })
               .eq('id', entry.id);
-
             if (error) {
               console.error('Update failed:', error);
-              alert(`Update failed: ${error.message}`);
-            } else {
-              entry[key] = newVal;
+              return alert(`Update failed: ${error.message}`);
             }
+            entry[key] = newVal;
+            renderTable();
           });
           tr.appendChild(td);
         });
 
-        // delete button
+        // delete btn
         const actionTd = document.createElement('td');
         const delBtn   = document.createElement('button');
         delBtn.textContent = 'Delete';
@@ -156,14 +157,12 @@ document.addEventListener('DOMContentLoaded', () => {
             .from('south1_entries')
             .delete()
             .eq('id', entry.id);
-
           if (error) {
             console.error('Delete failed:', error);
-            alert(`Delete failed: ${error.message}`);
-          } else {
-            entries = entries.filter(e => e.id !== entry.id);
-            renderTable();
+            return alert(`Delete failed: ${error.message}`);
           }
+          entries = entries.filter(e => e.id !== entry.id);
+          renderTable();
         });
         actionTd.appendChild(delBtn);
         tr.appendChild(actionTd);
@@ -172,25 +171,18 @@ document.addEventListener('DOMContentLoaded', () => {
       });
   }
 
-  // 📥 Export CSV
+  // 📥 CSV export
   exportBtn?.addEventListener('click', () => {
     const header = fields.join(',');
-    const rows = entries.map(e =>
-      fields.map(f => e[f] ?? '').join(',')
-    );
+    const rows = entries.map(e => fields.map(f => e[f] ?? '').join(','));
     const csv = [header, ...rows].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href     = url;
+    const a = document.createElement('a');
+    a.href     = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
     a.download = 'south1_data.csv';
-    document.body.appendChild(a);
     a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
   });
 
-  // 🔍 Filters & 🌙 Dark Mode toggle
+  // 🔍 Filters & 🌙 Dark mode
   [dateFilter, padFilter, wellFilter].forEach(el =>
     el?.addEventListener('change', renderTable)
   );
