@@ -2,54 +2,139 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Select Route Zone • SOUTH 1 Runsheet</title>
+  <title>Select Your Zone • Runsheet</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="stylesheet" href="css/index.css" />
+  <!-- Google Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
   <style>
-    /* show the modal by default */
-    #loginModal.show { display: flex; }
+    /* Reset & globals */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body, html { width: 100%; height: 100%; font-family: 'Inter', sans-serif; }
+
+    /* Full-screen gradient background */
+    body {
+      background: linear-gradient(135deg, #4a00e0, #8e2de2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      color: #fff;
+    }
+
+    /* Fade-in animation */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Centered card */
+    .card {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      padding: 2.5rem;
+      border-radius: 16px;
+      width: 320px;
+      animation: fadeIn 0.8s ease-out both;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      text-align: center;
+    }
+    .card h1 {
+      font-size: 1.75rem;
+      margin-bottom: 1.25rem;
+      font-weight: 700;
+    }
+    .card p {
+      margin-bottom: 1.5rem;
+      color: rgba(255,255,255,0.8);
+    }
+
+    /* Form elements */
+    .card form {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .card label {
+      font-size: 0.9rem;
+      text-align: left;
+    }
+    .card select,
+    .card input {
+      padding: 0.75rem 1rem;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      outline: none;
+      transition: background 0.2s;
+    }
+    .card select {
+      background: rgba(255,255,255,0.2);
+      color: #fff;
+    }
+    .card input {
+      background: rgba(255,255,255,0.2);
+      color: #fff;
+    }
+    .card select:focus,
+    .card input:focus {
+      background: rgba(255,255,255,0.3);
+    }
+
+    /* Button */
+    .card button {
+      margin-top: 0.5rem;
+      padding: 0.85rem;
+      border: none;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #ff416c, #ff4b2b);
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .card button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+    }
+
+    /* Error message */
+    .error {
+      color: #ffcccb;
+      font-size: 0.85rem;
+      min-height: 1em;
+    }
   </style>
 </head>
 <body>
-  <!-- Login / Zone-Select Modal -->
-  <div id="loginModal" class="modal show" role="dialog" aria-modal="true">
-    <div class="modal-content">
-      <h2>Select Your Route Zone</h2>
-      <form id="loginForm">
+  <div class="card">
+    <h1>Welcome</h1>
+    <p>Select your route zone and sign in to continue</p>
+    <form id="loginForm">
+      <div>
         <label for="routeZone">Route Zone</label>
         <select id="routeZone" name="routeZone" required>
-          <option value="">— pick a zone —</option>
+          <option value="" disabled selected>— pick a zone —</option>
           <option value="south1">South 1</option>
           <option value="north1">North 1</option>
           <option value="central1">Central 1</option>
         </select>
-
+      </div>
+      <div>
         <label for="zonePassword">Zone Password</label>
-        <input
-          id="zonePassword"
-          name="zonePassword"
-          type="password"
-          required
-          placeholder="Enter zone password"
-        />
-
+        <input id="zonePassword" name="zonePassword" type="password" required placeholder="Enter zone password" />
+      </div>
+      <div>
         <label for="userEmail">Email</label>
-        <input
-          id="userEmail"
-          name="userEmail"
-          type="email"
-          required
-          placeholder="you@example.com"
-        />
-
-        <button type="submit">Continue</button>
-        <div id="errorMsg" class="error" style="display:none;color:red;margin-top:0.5rem;"></div>
-      </form>
-    </div>
+        <input id="userEmail" name="userEmail" type="email" required placeholder="you@example.com" />
+      </div>
+      <div class="error" id="errorMsg"></div>
+      <button type="submit">Continue</button>
+    </form>
   </div>
 
   <script>
-    // ‣ Map each zone to its password (replace with your real passwords)
+    // Map of zone → its password
     const zonePasswords = {
       south1: 'south1pass',
       north1: 'north1pass',
@@ -58,33 +143,21 @@
 
     document.getElementById('loginForm').addEventListener('submit', e => {
       e.preventDefault();
-      const form     = e.target;
-      const zone     = form.routeZone.value;
-      const zpass    = form.zonePassword.value;
-      const email    = form.userEmail.value.trim();
-      const errDiv   = document.getElementById('errorMsg');
+      const zone  = e.target.routeZone.value;
+      const zpass = e.target.zonePassword.value;
+      const email = e.target.userEmail.value.trim();
+      const err   = document.getElementById('errorMsg');
 
-      // 1) Validate zone selection
       if (!zone || !zonePasswords[zone]) {
-        errDiv.textContent = 'Please select a valid zone.';
-        errDiv.style.display = 'block';
-        return;
+        return err.textContent = 'Please select a valid zone.';
       }
-      // 2) Validate password for that zone
       if (zpass !== zonePasswords[zone]) {
-        errDiv.textContent = 'Incorrect zone password.';
-        errDiv.style.display = 'block';
-        return;
+        return err.textContent = 'Incorrect zone password.';
       }
 
-      // Passed—store and redirect
+      // store and navigate
       sessionStorage.setItem('userEmail', email);
       sessionStorage.setItem('routeZone', zone);
-
-      // hide modal briefly
-      document.getElementById('loginModal').classList.remove('show');
-
-      // go to the appropriate page
       window.location.href = `${zone}.html`;
     });
   </script>
