@@ -2,12 +2,13 @@
 
 // — Your Supabase credentials —
 const SUPABASE_URL = 'https://nrkakpjugxncfyrgtpfr.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ya2FrcGp1Z3huY2Z5cmd0cGZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAxOTMyNjcsImV4cCI6MjA2NTc2OTI2N30.FzWYbNT792RH6rpxSr9OKlcjMV6qIuVL4oq_W9lsmQs'; // anon public key
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ya2FrcGp1Z3huY2Z5cmd0cGZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAxOTMyNjcsImV4cCI6MjA2NTc2OTI2N30.FzWYbNT792RH6rpxSr9OKlcjMV6qIuVL4oq_W9lsmQs'; // your anon public key
 
 // — Initialize client under its own name —
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 document.addEventListener('DOMContentLoaded', () => {
+  // — DOM nodes —
   const form       = document.getElementById('wellForm');
   const padSelect  = document.getElementById('pad');
   const wellSelect = document.getElementById('well');
@@ -18,6 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const toggleBtn  = document.getElementById('toggleMode');
   const exportBtn  = document.getElementById('exportBtn');
 
+  // — Field list —
   const fields = [
     'entry_date','pad','well','tub_press','cas_press','speed','fluid_level',
     'torque','oil_press','oil_level','frecuenze','tank_volume','free_water',
@@ -26,7 +28,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let entries = [];
 
-  // Load existing rows
+  // 🔄 Dynamic Pad → Well dropdown
+  padSelect?.addEventListener('change', () => {
+    // reset wells
+    wellSelect.innerHTML = '<option value="">-- Select Well --</option>';
+    if (!padSelect.value) return;
+    // populate 5 wells for the selected pad
+    for (let i = 1; i <= 5; i++) {
+      const name = `${padSelect.value}_Well_${i}`;
+      wellSelect.appendChild(new Option(name, name));
+    }
+  });
+
+  // Fetch existing entries
   async function loadEntries() {
     const { data, error } = await supabaseClient
       .from('south1_entries')
@@ -40,7 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renderTable();
   }
 
-  // Realtime subscription
+  // Realtime subscription for new inserts
   supabaseClient
     .channel('public:south1_entries')
     .on(
@@ -53,9 +67,10 @@ document.addEventListener('DOMContentLoaded', () => {
     )
     .subscribe();
 
+  // Initial load
   loadEntries();
 
-  // Handle form submission → INSERT into Supabase
+  // Handle form submits → INSERT
   form?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const payload = {};
@@ -69,22 +84,21 @@ document.addEventListener('DOMContentLoaded', () => {
       .insert([payload]);
 
     if (error) {
-      console.error(error);
+      console.error('Insert error:', error);
       alert(`Insert failed: ${error.message}`);
       return;
     }
-
     form.reset();
   });
 
-  // Render table (filters, inline-edit, delete)
+  // Render table + filters + inline edit + delete
   function renderTable() {
     tableBody.innerHTML = '';
-    const df = dateFilter?.value || '';
-    const pf = padFilter?.value    || '';
-    const wf = wellFilter?.value   || '';
+    const df = dateFilter.value || '';
+    const pf = padFilter.value    || '';
+    const wf = wellFilter.value   || '';
 
-    // Rebuild filter selects
+    // rebuild filter dropdowns
     const uniq = key => [...new Set(entries.map(e => e[key]).filter(Boolean))];
     if (dateFilter) dateFilter.innerHTML =
       `<option value="">All Dates</option>` +
@@ -96,7 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
       `<option value="">All Wells</option>` +
       uniq('well').map(v => `<option>${v}</option>`).join('');
 
-    // Filter & draw rows
+    // draw filtered rows
     entries
       .filter(e =>
         (!df || e.entry_date === df) &&
@@ -121,8 +135,10 @@ document.addEventListener('DOMContentLoaded', () => {
           });
           tr.appendChild(td);
         });
+
+        // delete button
         const actionTd = document.createElement('td');
-        const delBtn = document.createElement('button');
+        const delBtn   = document.createElement('button');
         delBtn.textContent = 'Delete';
         delBtn.addEventListener('click', async () => {
           const { error } = await supabaseClient
@@ -134,18 +150,18 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         actionTd.appendChild(delBtn);
         tr.appendChild(actionTd);
+
         tableBody.appendChild(tr);
       });
   }
 
-  // Export CSV
+  // CSV export
   exportBtn?.addEventListener('click', () => {
-    const header = fields.join(',');
-    const rows = entries.map(e =>
-      fields.map(f => e[f] ?? '').join(',')
-    );
-    const csv = [header, ...rows].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
+    const lines = [
+      fields.join(','),
+      ...entries.map(e => fields.map(f => e[f] ?? '').join(','))
+    ];
+    const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
     const a    = document.createElement('a');
     a.href     = URL.createObjectURL(blob);
     a.download = 'south1_data.csv';
@@ -155,7 +171,7 @@ document.addEventListener('DOMContentLoaded', () => {
     URL.revokeObjectURL(a.href);
   });
 
-  // Filters & Dark Mode toggle
+  // Filters & Dark‐Mode toggle
   [dateFilter, padFilter, wellFilter].forEach(el =>
     el?.addEventListener('change', renderTable)
   );
