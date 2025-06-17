@@ -11,7 +11,6 @@ html, body {
   height: 100%;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   background: linear-gradient(135deg, #335a9d, #599ef8);
-  color: #fff;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -28,21 +27,22 @@ html, body {
 .card {
   background: rgba(255, 255, 255, 0.15);
   backdrop-filter: blur(8px);
-  padding: 2rem;
+  padding: 2rem 1.5rem;
   border-radius: 12px;
   width: 90%;
-  max-width: 480px;
+  max-width: 500px;
   text-align: center;
   box-shadow: 0 8px 24px rgba(0,0,0,0.3);
   animation: fadeIn 0.8s ease-out both;
+  color: #fff;
 }
 .card h1 {
   font-size: 1.75rem;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
   font-weight: 700;
 }
 .card p {
-  margin-bottom: 1.25rem;
+  margin-bottom: 1rem;
   color: rgba(255,255,255,0.85);
 }
 
@@ -52,33 +52,41 @@ html, body {
   flex-direction: column;
   gap: 1rem;
 }
+.card form > div {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+}
 .card label {
-  text-align: left;
   font-size: 0.9rem;
-  color: #eef2f7;
+  text-align: left;
 }
 .card select,
 .card input {
+  width: 100%;
   padding: 0.75rem 1rem;
-  border: none;
+  border: 1px solid rgba(0,0,0,0.2);
   border-radius: 6px;
   font-size: 1rem;
-  background: rgba(255,255,255,0.2);
-  color: #fff;
-  transition: background 0.2s;
-  appearance: none;
+  background: #fff;
+  color: #000;
+  transition: border-color 0.2s;
 }
 .card select {
-  background: rgba(255,255,255,0.2) url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2210%22%20height%3D%227%22%20viewBox%3D%220%200%2010%207%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cpath%20d%3D%22M0%200l5%207%205-7z%22%20fill%3D%22%23fff%22/%3E%3C/svg%3E") no-repeat right 1rem center;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20width='10'%20height='7'%20viewBox='0 0 10 7'%20xmlns='http://www.w3.org/2000/svg'%3E%3Cpath%20d='M0 0l5 7 5-7z'%20fill='%23000'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
   background-size: 10px 7px;
 }
 .card select:focus,
 .card input:focus {
-  background: rgba(255,255,255,0.3);
   outline: none;
+  border-color: #4a90e2;
 }
 .card option {
-  color: #333;
+  color: #000;
   background: #fff;
 }
 
@@ -101,8 +109,9 @@ html, body {
 
 /* Error message */
 .error {
-  color: #ffcccc;
-  font-size: 0.85rem;
+  width: 100%;
   min-height: 1em;
+  font-size: 0.85rem;
+  color: #ffcccc;
   text-align: left;
 }
