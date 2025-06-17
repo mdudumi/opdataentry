@@ -1,0 +1,133 @@
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f8f9fa;
+  color: #333;
+}
+
+header {
+  text-align: center;
+  padding: 20px 10px;
+  background-color: #007BFF;
+  color: white;
+}
+
+h1 {
+  margin: 0;
+  font-size: 1.8rem;
+}
+
+.runsheet-list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  padding: 15px 10px;
+  gap: 12px;
+}
+
+.runsheet-card {
+  flex: 1 1 140px;
+  max-width: 200px;
+  padding: 14px 20px;
+  background-color: #007BFF;
+  color: white;
+  text-align: center;
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 1.1rem;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+  user-select: none;
+}
+
+.runsheet-card:hover,
+.runsheet-card:focus {
+  background-color: #0056b3;
+  box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+  outline: none;
+}
+
+/* Modal backdrop */
+.modal {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.5);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+/* Show modal */
+.modal.show {
+  display: flex;
+}
+
+/* Modal box */
+.modal-content {
+  background: white;
+  padding: 24px 30px;
+  border-radius: 10px;
+  max-width: 320px;
+  width: 90%;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  text-align: center;
+}
+
+/* Input style */
+#modalPasswordInput {
+  width: 100%;
+  padding: 10px 12px;
+  margin-top: 12px;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  box-sizing: border-box;
+}
+
+/* Buttons container */
+.modal-buttons {
+  margin-top: 18px;
+  display: flex;
+  justify-content: space-between;
+}
+
+/* Buttons */
+.modal-buttons button {
+  flex: 1;
+  margin: 0 6px;
+  padding: 10px 0;
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  background-color: #007BFF;
+  color: white;
+  transition: background-color 0.3s ease;
+}
+
+.modal-buttons button:hover {
+  background-color: #0056b3;
+}
+
+.modal-buttons button#modalCancelBtn {
+  background-color: #6c757d;
+}
+
+.modal-buttons button#modalCancelBtn:hover {
+  background-color: #5a6268;
+}
+
+@media (max-width: 480px) {
+  h1 {
+    font-size: 1.4rem;
+  }
+  .runsheet-card {
+    flex-basis: 100%;
+    max-width: 100%;
+    font-size: 1.3rem;
+    padding: 16px;
+  }
+}
