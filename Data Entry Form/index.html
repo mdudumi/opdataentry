@@ -3,67 +3,55 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Runsheet Selector</title>
+  <title>Sign In • SOUTH 1 Runsheet</title>
   <link rel="stylesheet" href="css/index.css" />
+  <style>
+    /* Ensure the modal is visible on load */
+    #loginModal.show {
+      display: flex;
+    }
+  </style>
 </head>
 <body>
-  <header>
-    <h1>SELECT A RUNSHEET</h1>
-  </header>
-
-  <main class="runsheet-list">
-    <a href="south1.html"
-       class="runsheet-card password-protected"
-       data-page="south1.html"
-       data-password="South123">
-      South 1
-    </a>
-    <a href="south2.html"
-       class="runsheet-card password-protected"
-       data-page="south2.html"
-       data-password="South456">
-      South 2
-    </a>
-    <a href="north1.html"
-       class="runsheet-card password-protected"
-       data-page="north1.html"
-       data-password="North789">
-      North 1
-    </a>
-    <a href="custom.html"
-       class="runsheet-card password-protected"
-       data-page="custom.html"
-       data-password="Custom000">
-      + Add New
-    </a>
-  </main>
-
-  <!-- Password Modal -->
-  <div id="passwordModal"
-       class="modal"
-       aria-hidden="true"
-       role="dialog"
-       aria-labelledby="modalTitle"
-       aria-describedby="modalDesc">
+  <!-- Login Modal -->
+  <div
+    id="loginModal"
+    class="modal show"
+    aria-hidden="false"
+    role="dialog"
+    aria-labelledby="loginTitle"
+    aria-describedby="loginDesc"
+  >
     <div class="modal-content" role="document">
-      <h2 id="modalTitle">Enter Password</h2>
-      <p id="modalDesc">Please enter the password to access:</p>
-      <input type="password"
-             id="modalPasswordInput"
-             autocomplete="current-password"
-             aria-label="Password" />
-      <div class="modal-buttons">
-        <button id="modalSubmitBtn">Submit</button>
-        <button id="modalCancelBtn">Cancel</button>
-      </div>
-      <p id="modalErrorMsg"
-         style="color: red; display: none; margin-top: 8px;">
-        Incorrect password, please try again.
-      </p>
+      <h2 id="loginTitle">Sign In</h2>
+      <p id="loginDesc">Please enter your email to continue</p>
+      <form id="loginForm">
+        <label for="userEmail">Email</label>
+        <input
+          id="userEmail"
+          name="userEmail"
+          type="email"
+          required
+          placeholder="you@example.com"
+        />
+        <div class="modal-buttons" style="margin-top:1rem; justify-content:flex-end;">
+          <button type="submit">Continue</button>
+        </div>
+      </form>
     </div>
   </div>
 
-  <script src="js/index.js"></script>
+  <script>
+    document.getElementById('loginForm').addEventListener('submit', e => {
+      e.preventDefault();
+      const email = e.target.userEmail.value.trim();
+      // Store for south1.html to pick up
+      sessionStorage.setItem('userEmail', email);
+      // Hide the modal
+      document.getElementById('loginModal').classList.remove('show');
+      // Redirect to the runsheet page
+      window.location.href = 'south1.html';
+    });
+  </script>
 </body>
 </html>
-
