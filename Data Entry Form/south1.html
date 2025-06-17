@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SOUTH 1 - RUNSHEET</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <header>
+    <h1>SOUTH 1 - RUNSHEET</h1>
+    <a href="index.html" class="return-button">← Return to Index</a>
+    <button id="toggleMode" aria-label="Toggle dark mode">Toggle Dark</button>
+  </header>
+
+  <div class="container">
+    <div class="left-pane">
+      <form id="wellForm">
+        <label for="entry_date">Entry Date</label>
+        <input type="date" id="entry_date" name="entry_date" required />
+
+        <label for="pad">Pad</label>
+        <select id="pad" name="pad" required>
+          <option value="">-- Select Pad --</option>
+          <option value="Pad1">Pad1</option>
+          <option value="Pad2">Pad2</option>
+          <option value="Pad3">Pad3</option>
+        </select>
+
+        <label for="well">Well</label>
+        <select id="well" name="well" required>
+          <option value="">-- Select Well --</option>
+        </select>
+
+        <label for="tub_press">Tubing Pressure</label>
+        <input type="number" step="any" id="tub_press" name="tub_press" />
+
+        <label for="cas_press">Casing Pressure</label>
+        <input type="number" step="any" id="cas_press" name="cas_press" />
+
+        <label for="speed">Speed</label>
+        <input type="number" step="any" id="speed" name="speed" />
+
+        <label for="fluid_level">Fluid Level</label>
+        <input type="number" step="any" id="fluid_level" name="fluid_level" />
+
+        <label for="torque">Torque</label>
+        <input type="number" step="any" id="torque" name="torque" />
+
+        <label for="oil_press">Oil Pressure</label>
+        <input type="number" step="any" id="oil_press" name="oil_press" />
+
+        <label for="oil_level">Oil Level</label>
+        <input type="number" step="any" id="oil_level" name="oil_level" />
+
+        <label for="frecuenze">Frequency</label>
+        <input type="number" step="any" id="frecuenze" name="frecuenze" />
+
+        <label for="tank_volume">Tank Volume</label>
+        <input type="number" step="any" id="tank_volume" name="tank_volume" />
+
+        <label for="free_water">Free Water</label>
+        <input type="number" step="any" id="free_water" name="free_water" />
+
+        <label for="bsw_tank">BSW Tank</label>
+        <input type="number" step="any" id="bsw_tank" name="bsw_tank" />
+
+        <label for="tank_temp">Tank Temperature</label>
+        <input type="number" step="any" id="tank_temp" name="tank_temp" />
+
+        <label for="water_diluent">Water Diluent</label>
+        <input type="number" step="any" id="water_diluent" name="water_diluent" />
+
+        <label for="diesel_propane">Diesel Propane</label>
+        <input type="number" step="any" id="diesel_propane" name="diesel_propane" />
+
+        <label for="chmc">CHMC</label>
+        <input type="number" step="any" id="chmc" name="chmc" />
+
+        <button type="submit">Add Entry</button>
+      </form>
+    </div>
+
+    <div class="right-pane">
+      <table id="previewTable" aria-label="Well Data Table">
+        <thead>
+          <tr>
+            <th>Entry Date</th>
+            <th>Pad</th>
+            <th>Well</th>
+            <th>Tub Press</th>
+            <th>Cas Press</th>
+            <th>Speed</th>
+            <th>Fluid Level</th>
+            <th>Torque</th>
+            <th>Oil Press</th>
+            <th>Oil Level</th>
+            <th>Frequency</th>
+            <th>Tank Volume</th>
+            <th>Free Water</th>
+            <th>BSW Tank</th>
+            <th>Tank Temp</th>
+            <th>Water Diluent</th>
+            <th>Diesel Propane</th>
+            <th>CHMC</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script src="js/script.js"></script>
+</body>
+</html>
