@@ -20,7 +20,7 @@
         <input type="date" id="entry_date" name="entry_date" required />
 
         <label for="pad">Pad</label>
-        <select id="pad" name="pad" required>
+        <select name="pad" id="pad" required>
           <option value="">-- Select Pad --</option>
           <option value="Pad1">Pad1</option>
           <option value="Pad2">Pad2</option>
@@ -28,9 +28,12 @@
         </select>
 
         <label for="well">Well</label>
-        <select id="well" name="well" required>
-          <option value="">-- Select Well --</option>
-        </select>
+	<select name="well" id="well" required>
+  	<option value="">-- Select Well --</option>
+          <option value="W1">W1</option>
+          <option value="W2">W2</option>
+          <option value="W3">W3</option>
+	</select>
 
         <label for="tub_press">Tubing Pressure</label>
         <input type="number" step="any" id="tub_press" name="tub_press" />
@@ -111,6 +114,8 @@
     </div>
   </div>
 
-  <script src="js/script.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+<script src="js/script.js"></script>
+
 </body>
 </html>
