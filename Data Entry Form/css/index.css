@@ -30,7 +30,8 @@ html, body {
   backdrop-filter: blur(8px);
   padding: 2rem;
   border-radius: 12px;
-  width: 320px;
+  width: 90%;
+  max-width: 480px;
   text-align: center;
   box-shadow: 0 8px 24px rgba(0,0,0,0.3);
   animation: fadeIn 0.8s ease-out both;
