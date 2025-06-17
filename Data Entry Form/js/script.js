@@ -26,16 +26,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let entries = [];
 
-  // Dynamic Pad → Well dropdown
-  padSelect?.addEventListener('change', () => {
-    wellSelect.innerHTML = '<option value="">-- Select Well --</option>';
-    if (!padSelect.value) return;
-    for (let i = 1; i <= 5; i++) {
-      const name = `${padSelect.value}_Well_${i}`;
-      wellSelect.appendChild(new Option(name, name));
-    }
-  });
-
   // Load existing rows
   async function loadEntries() {
     const { data, error } = await supabaseClient
