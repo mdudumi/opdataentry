@@ -55,6 +55,7 @@ html, body {
 .card label {
   text-align: left;
   font-size: 0.9rem;
+  color: #eef2f7;
 }
 .card select,
 .card input {
@@ -65,11 +66,20 @@ html, body {
   background: rgba(255,255,255,0.2);
   color: #fff;
   transition: background 0.2s;
+  appearance: none;
+}
+.card select {
+  background: rgba(255,255,255,0.2) url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2210%22%20height%3D%227%22%20viewBox%3D%220%200%2010%207%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cpath%20d%3D%22M0%200l5%207%205-7z%22%20fill%3D%22%23fff%22/%3E%3C/svg%3E") no-repeat right 1rem center;
+  background-size: 10px 7px;
 }
 .card select:focus,
 .card input:focus {
   background: rgba(255,255,255,0.3);
   outline: none;
+}
+.card option {
+  color: #333;
+  background: #fff;
 }
 
 /* Button styling */
