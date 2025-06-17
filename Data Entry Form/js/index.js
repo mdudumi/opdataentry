@@ -1,85 +1,36 @@
 document.addEventListener('DOMContentLoaded', () => {
-  const modal = document.getElementById('passwordModal');
-  const passwordInput = document.getElementById('modalPasswordInput');
-  const submitBtn = document.getElementById('modalSubmitBtn');
-  const cancelBtn = document.getElementById('modalCancelBtn');
-  const errorMsg = document.getElementById('modalErrorMsg');
+  // Map route zones to their secure passwords
+  const zonePasswords = {
+    south1: 'south1pass',
+    north1: 'north1pass',
+    central1: 'central1pass'
+  };
 
-  let targetPage = null;
-  let targetPassword = null;
+  const form     = document.getElementById('loginForm');
+  const errorMsg = document.getElementById('errorMsg');
 
-  // Open the modal and set up target page/password
-  function openModal(page, password) {
-    targetPage = page;
-    targetPassword = password;
-    errorMsg.style.display = 'none';
-    passwordInput.value = '';
-    modal.setAttribute('aria-hidden', 'false');
-    modal.style.display = 'block';
-    passwordInput.focus();
-  }
+  form.addEventListener('submit', e => {
+    e.preventDefault();
 
-  // Close the modal and reset targets
-  function closeModal() {
-    modal.setAttribute('aria-hidden', 'true');
-    modal.style.display = 'none';
-    targetPage = null;
-    targetPassword = null;
-  }
+    const zone     = form.routeZone.value;
+    const zpass    = form.zonePassword.value;
+    const email    = form.userEmail.value.trim();
 
-  // Attach click handlers to all password-protected links
-  document.querySelectorAll('.password-protected').forEach(link => {
-    link.addEventListener('click', event => {
-      event.preventDefault();
-      openModal(link.getAttribute('data-page'), link.getAttribute('data-password'));
-    });
-  });
-
-  // Handle submit button
-  submitBtn.addEventListener('click', () => {
-    const entered = passwordInput.value;
-    if (entered === targetPassword) {
-      // Redirect before clearing modal state
-      if (targetPage) {
-        window.location.href = targetPage;
-      }
-    } else {
-      errorMsg.style.display = 'block';
-      passwordInput.value = '';
-      passwordInput.focus();
+    // Validation
+    if (!zone || !zonePasswords[zone]) {
+      errorMsg.textContent = 'Please select a valid zone.';
+      return;
     }
-  });
-
-  // Handle cancel button
-  cancelBtn.addEventListener('click', () => {
-    closeModal();
-  });
-
-  // Close modal on Escape key
-  document.addEventListener('keydown', event => {
-    if (event.key === 'Escape' && modal.getAttribute('aria-hidden') === 'false') {
-      closeModal();
+    if (zpass !== zonePasswords[zone]) {
+      errorMsg.textContent = 'Incorrect zone password.';
+      return;
     }
-  });
 
-  // Trap focus inside modal
-  modal.addEventListener('keydown', event => {
-    if (event.key === 'Tab') {
-      const focusable = Array.from(modal.querySelectorAll('button, input'));
-      const index = focusable.indexOf(document.activeElement);
-      if (event.shiftKey) {
-        // Move focus backward
-        if (index === 0) {
-          event.preventDefault();
-          focusable[focusable.length - 1].focus();
-        }
-      } else {
-        // Move focus forward
-        if (index === focusable.length - 1) {
-          event.preventDefault();
-          focusable[0].focus();
-        }
-      }
-    }
+    // Store for next page
+    sessionStorage.setItem('userEmail', email);
+    sessionStorage.setItem('routeZone', zone);
+
+    // Redirect to the chosen zone's page
+    window.location.href = `${zone}.html`;
   });
 });
