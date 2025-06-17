@@ -1,103 +1,97 @@
-/\* index.css \*/
+/* index.css */
 
-/\* Global styles \*/
-body, html {
-width: 100%;
-height: 100%;
-margin: 0;
-font-family: 'Inter', sans-serif;
+/* Reset & globals */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+html, body {
+  width: 100%;
+  height: 100%;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(135deg, #335a9d, #599ef8);
+  color: #fff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
 }
 
-/\* Full-screen gradient background \*/
-body {
-background: linear-gradient(135deg, #4a00e0, #8e2de2);
-display: flex;
-align-items: center;
-justify-content: center;
-overflow: hidden;
-color: #fff;
-}
-
-/\* Fade-in animation for the card \*/
+/* Fade-in animation */
 @keyframes fadeIn {
-from { opacity: 0; transform: translateY(20px); }
-to   { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
-/\* Centered splash card \*/
+/* Centered card */
 .card {
-background: rgba(255, 255, 255, 0.1);
-backdrop-filter: blur(10px);
-padding: 2.5rem;
-border-radius: 16px;
-width: 320px;
-animation: fadeIn 0.8s ease-out both;
-box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-text-align: center;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(8px);
+  padding: 2rem;
+  border-radius: 12px;
+  width: 320px;
+  text-align: center;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+  animation: fadeIn 0.8s ease-out both;
 }
-
 .card h1 {
-font-size: 1.75rem;
-margin-bottom: 1.25rem;
-font-weight: 700;
+  font-size: 1.75rem;
+  margin-bottom: 1rem;
+  font-weight: 700;
 }
-
 .card p {
-margin-bottom: 1.5rem;
-color: rgba(255,255,255,0.8);
+  margin-bottom: 1.25rem;
+  color: rgba(255,255,255,0.85);
 }
 
-/\* Form layout within card \*/
+/* Form layout */
 .card form {
-display: flex;
-flex-direction: column;
-gap: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
-
 .card label {
-font-size: 0.9rem;
-text-align: left;
+  text-align: left;
+  font-size: 0.9rem;
 }
-
 .card select,
 .card input {
-padding: 0.75rem 1rem;
-border: none;
-border-radius: 8px;
-font-size: 1rem;
-outline: none;
-transition: background 0.2s;
-background: rgba(255,255,255,0.2);
-color: #fff;
+  padding: 0.75rem 1rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  background: rgba(255,255,255,0.2);
+  color: #fff;
+  transition: background 0.2s;
+}
+.card select:focus,
+.card input:focus {
+  background: rgba(255,255,255,0.3);
+  outline: none;
 }
 
-.card select\:focus,
-.card input\:focus {
-background: rgba(255,255,255,0.3);
-}
-
-/\* Button styling \*/
+/* Button styling */
 .card button {
-margin-top: 0.5rem;
-padding: 0.85rem;
-border: none;
-border-radius: 8px;
-background: linear-gradient(135deg, #ff416c, #ff4b2b);
-color: #fff;
-font-size: 1rem;
-font-weight: 600;
-cursor: pointer;
-transition: transform 0.2s, box-shadow 0.2s;
+  padding: 0.8rem;
+  border: none;
+  border-radius: 6px;
+  background: #4a90e2;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
+}
+.card button:hover {
+  background: #335a9d;
+  transform: translateY(-2px);
 }
 
-.card button\:hover {
-transform: translateY(-2px);
-box-shadow: 0 8px 20px rgba(0,0,0,0.3);
-}
-
-/\* Error message styling \*/
+/* Error message */
 .error {
-color: #ffcccb;
-font-size: 0.85rem;
-min-height: 1em;
+  color: #ffcccc;
+  font-size: 0.85rem;
+  min-height: 1em;
+  text-align: left;
 }
