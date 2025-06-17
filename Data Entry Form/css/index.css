@@ -53,14 +53,15 @@ html, body {
   gap: 1rem;
 }
 .card form > div {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.25rem;
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  align-items: center;
+  gap: 0.75rem;
 }
 .card label {
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   text-align: left;
+  color: #eef2f7;
 }
 .card select,
 .card input {
@@ -95,15 +96,16 @@ html, body {
   padding: 0.8rem;
   border: none;
   border-radius: 6px;
-  background: #4a90e2;
+  background: #ff6f61;
   color: #fff;
-  font-size: 1rem;
+  font-size: 1.05rem;
   font-weight: 600;
   cursor: pointer;
   transition: background 0.2s, transform 0.2s;
+  width: 100%;
 }
 .card button:hover {
-  background: #335a9d;
+  background: #e65b50;
   transform: translateY(-2px);
 }
 
@@ -114,4 +116,11 @@ html, body {
   font-size: 0.85rem;
   color: #ffcccc;
   text-align: left;
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+  .card form > div {
+    grid-template-columns: 1fr;
+  }
 }
