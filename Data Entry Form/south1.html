@@ -3,21 +3,29 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>SOUTH 1 - RUNSHEET</title>
+  <title>SOUTH 1 – RUNSHEET</title>
   <link rel="stylesheet" href="css/style.css" />
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-<header>
-    <h1>SOUTH 1 - RUNSHEET</h1>
+  <header>
+    <h1>SOUTH 1 – RUNSHEET</h1>
+    <div class="header-buttons">
+      <a href="index.html" class="return-button">← Return to Index</a>
+      <button id="toggleMode">Toggle Dark</button>
+    </div>
   </header>
+
   <div class="container">
+    <!-- LEFT: data-entry form -->
     <div class="left-pane">
       <form id="wellForm">
         <label for="entry_date">Entry Date</label>
         <input type="date" id="entry_date" name="entry_date" required />
 
         <label for="pad">Pad</label>
-        <select name="pad" id="pad" required>
+        <select id="pad" name="pad" required>
           <option value="">-- Select Pad --</option>
           <option value="Pad1">Pad1</option>
           <option value="Pad2">Pad2</option>
@@ -25,13 +33,12 @@
         </select>
 
         <label for="well">Well</label>
-	<select name="well" id="well" required>
-  	<option value="">-- Select Well --</option>
-          <option value="W1">W1</option>
-          <option value="W2">W2</option>
-          <option value="W3">W3</option>
-	</select>
+        <select id="well" name="well" required>
+          <option value="">-- Select Well --</option>
+          <!-- generated dynamically if you wish -->
+        </select>
 
+        <!-- Numeric inputs -->
         <label for="tub_press">Tubing Pressure</label>
         <input type="number" step="any" id="tub_press" name="tub_press" />
 
@@ -77,53 +84,121 @@
         <label for="chmc">CHMC</label>
         <input type="number" step="any" id="chmc" name="chmc" />
 
-	<div class="footer-buttons">
         <button type="submit">Add Entry</button>
-	  </div>	
-	      
       </form>
     </div>
-  
-    <div class="right-pane">
-	    
-<div class="header-buttons">
-    <a href="index.html" class="return-button">← Return to Index</a>
-    <button id="toggleMode">Toggle Dark</button>
-  </div>
 
-	    <div class="table-wrapper">
-      <table id="previewTable" aria-label="Well Data Table">
-        <thead>
-          <tr>
-            <th>Entry Date</th>
-            <th>Pad</th>
-            <th>Well</th>
-            <th>Tub Press</th>
-            <th>Cas Press</th>
-            <th>Speed</th>
-            <th>Fluid Level</th>
-            <th>Torque</th>
-            <th>Oil Press</th>
-            <th>Oil Level</th>
-            <th>Frequency</th>
-            <th>Tank Volume</th>
-            <th>Free Water</th>
-            <th>BSW Tank</th>
-            <th>Tank Temp</th>
-            <th>Water Diluent</th>
-            <th>Diesel Propane</th>
-            <th>CHMC</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-	</div>	    
+    <!-- RIGHT: table, controls, chart -->
+    <div class="right-pane">
+
+      <!-- scrollable table wrapper -->
+      <div class="table-wrapper">
+        <table id="previewTable" aria-label="Well Data Table">
+          <thead>
+            <tr>
+              <th>Entry Date</th><th>Pad</th><th>Well</th>
+              <th>Tub Press</th><th>Cas Press</th><th>Speed</th>
+              <th>Fluid Level</th><th>Torque</th><th>Oil Press</th>
+              <th>Oil Level</th><th>Frequency</th><th>Tank Volume</th>
+              <th>Free Water</th><th>BSW Tank</th><th>Tank Temp</th>
+              <th>Water Diluent</th><th>Diesel Propane</th><th>CHMC</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <!-- Chart parameter selectors -->
+      <div class="chart-controls">
+        <label for="xParam">X-Axis:</label>
+        <select id="xParam">
+          <option value="entry_date">Entry Date</option>
+          <option value="pad">Pad</option>
+          <option value="well">Well</option>
+          <option value="tub_press">Tub Press</option>
+          <option value="cas_press">Cas Press</option>
+          <option value="speed">Speed</option>
+          <option value="fluid_level">Fluid Level</option>
+          <option value="torque">Torque</option>
+          <option value="oil_press">Oil Press</option>
+          <option value="oil_level">Oil Level</option>
+          <option value="frecuenze">Frequency</option>
+          <option value="tank_volume">Tank Volume</option>
+          <option value="free_water">Free Water</option>
+          <option value="bsw_tank">BSW Tank</option>
+          <option value="tank_temp">Tank Temp</option>
+          <option value="water_diluent">Water Diluent</option>
+          <option value="diesel_propane">Diesel Propane</option>
+          <option value="chmc">CHMC</option>
+        </select>
+
+        <label for="yParam">Y-Axis:</label>
+        <select id="yParam">
+          <option value="tub_press">Tub Press</option>
+          <option value="cas_press">Cas Press</option>
+          <option value="speed">Speed</option>
+          <option value="fluid_level">Fluid Level</option>
+          <option value="torque">Torque</option>
+          <option value="oil_press">Oil Press</option>
+          <option value="oil_level">Oil Level</option>
+          <option value="frecuenze">Frequency</option>
+          <option value="tank_volume">Tank Volume</option>
+          <option value="free_water">Free Water</option>
+          <option value="bsw_tank">BSW Tank</option>
+          <option value="tank_temp">Tank Temp</option>
+          <option value="water_diluent">Water Diluent</option>
+          <option value="diesel_propane">Diesel Propane</option>
+          <option value="chmc">CHMC</option>
+        </select>
+
+        <button id="renderChart">Plot</button>
+      </div>
+
+      <!-- Chart area -->
+      <div class="chart-wrapper">
+        <canvas id="parameterChart"></canvas>
+      </div>
     </div>
   </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-<script src="js/south1.js"></script>
+  <!-- main script and chart logic -->
+  <script src="js/script.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const xSelect = document.getElementById('xParam');
+      const ySelect = document.getElementById('yParam');
+      const plotBtn = document.getElementById('renderChart');
+      const ctx     = document.getElementById('parameterChart').getContext('2d');
+      let chart;
 
+      plotBtn.addEventListener('click', () => {
+        // `entries` comes from js/script.js
+        const labels = entries.map(e => e[xSelect.value]);
+        const data   = entries.map(e => parseFloat(e[ySelect.value]) || 0);
+
+        if (chart) chart.destroy();
+        chart = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels,
+            datasets: [{
+              label: `${ySelect.selectedOptions[0].text} vs ${xSelect.selectedOptions[0].text}`,
+              data,
+              fill: false,
+              borderWidth: 2,
+            }]
+          },
+          options: {
+            responsive: true,
+            scales: {
+              x: { title: { display: true, text: xSelect.selectedOptions[0].text } },
+              y: { title: { display: true, text: ySelect.selectedOptions[0].text } }
+            }
+          }
+        });
+      });
+    });
+  </script>
 </body>
 </html>
