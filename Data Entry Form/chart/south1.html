@@ -54,8 +54,9 @@
       document.getElementById('backBtn').onclick = () => location.href = 'south1.html';
 
       // Retrieve credentials once
-      const supabaseUrl = sessionStorage.getItem('supabaseUrl');
-      const supabaseKey = sessionStorage.getItem('supabaseKey');
+const SUPABASE_URL = 'https://nrkakpjugxncfyrgtpfr.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ya2FrcGp1Z3huY2Z5cmd0cGZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAxOTMyNjcsImV4cCI6MjA2NTc2OTI2N30.FzWYbNT792RH6rpxSr9OKlcjMV6qIuVL4oq_W9lsmQs';
+
       if (!supabaseUrl || !supabaseKey) {
         console.error('Missing Supabase credentials');
         return location.href = 'south1.html';
