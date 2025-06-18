@@ -1,5 +1,3 @@
-// js/script.js
-
 // — Your Supabase credentials —
 const SUPABASE_URL = 'https://nrkakpjugxncfyrgtpfr.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ya2FrcGp1Z3huY2Z5cmd0cGZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAxOTMyNjcsImV4cCI6MjA2NTc2OTI2N30.FzWYbNT792RH6rpxSr9OKlcjMV6qIuVL4oq_W9lsmQs';
@@ -7,202 +5,251 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 // — Initialize the Supabase client —
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 document.addEventListener('DOMContentLoaded', () => {
-  // 1️⃣ Get the email saved in index.html
   const currentEmail = sessionStorage.getItem('userEmail') || 'unknown@example.com';
-
-  // 2️⃣ Grab DOM nodes
   const form       = document.getElementById('wellForm');
   const padSelect  = document.getElementById('pad');
   const wellSelect = document.getElementById('well');
-  const tableBody  = document.querySelector('#previewTable tbody');
-  const dateFilter = document.getElementById('dateFilter');
-  const padFilter  = document.getElementById('padFilter');
-  const wellFilter = document.getElementById('wellFilter');
+  const table      = document.getElementById('previewTable');
+  const thead      = table.querySelector('thead');
+  const tbody      = table.querySelector('tbody');
   const toggleBtn  = document.getElementById('toggleMode');
-  const exportBtn  = document.getElementById('exportBtn');
 
-  // 3️⃣ Your form fields
   const fields = [
     'entry_date','pad','well','tub_press','cas_press','speed','fluid_level',
     'torque','oil_press','oil_level','frecuenze','tank_volume','free_water',
     'bsw_tank','tank_temp','water_diluent','diesel_propane','chmc'
   ];
-
+  const tableName = 'south1_entries';
   let entries = [];
+  let filterValues = {};   // { key: { op, val } }
+  let sortKey = null;
+  let sortDir = 'asc';
 
-  // 4️⃣ Pad → Well dropdown
-  padSelect?.addEventListener('change', () => {
-    wellSelect.innerHTML = '<option value="">-- Select Well --</option>';
-    if (!padSelect.value) return;
-    for (let i = 1; i <= 5; i++) {
-      const name = `${padSelect.value}_Well_${i}`;
-      wellSelect.appendChild(new Option(name, name));
-    }
-  });
+  // Build the three header rows: titles, operators, values
+  function buildHeader() {
+    thead.innerHTML = '';
 
-  // 5️⃣ Load existing entries
+    // 1️⃣ Titles with sort
+    const titleRow = document.createElement('tr');
+    fields.forEach(key => {
+      const th = document.createElement('th');
+      th.textContent = key.replace(/_/g,' ').toUpperCase();
+      th.style.cursor = 'pointer';
+      th.addEventListener('click', () => {
+        if (sortKey === key) sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+        else { sortKey = key; sortDir = 'asc'; }
+        renderTable();
+      });
+      titleRow.appendChild(th);
+    });
+    titleRow.appendChild(document.createElement('th')); // action col
+    thead.appendChild(titleRow);
+
+    // 2️⃣ Operator row
+    const opRow = document.createElement('tr');
+    fields.forEach(key => {
+      const th = document.createElement('th');
+      const select = document.createElement('select');
+      ['', '=', 'contains', '<', '<=', '>', '>=', 'between'].forEach(o => {
+        const opt = document.createElement('option');
+        opt.value = o;
+        opt.textContent = o || 'Op';
+        select.appendChild(opt);
+      });
+      select.addEventListener('change', () => {
+        filterValues[key] = filterValues[key] || {};
+        filterValues[key].op = select.value;
+        renderTable();
+      });
+      th.appendChild(select);
+      opRow.appendChild(th);
+    });
+    opRow.appendChild(document.createElement('th'));
+    thead.appendChild(opRow);
+
+    // 3️⃣ Value row
+    const valRow = document.createElement('tr');
+    fields.forEach(key => {
+      const th = document.createElement('th');
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.placeholder = 'Value';
+      input.addEventListener('input', () => {
+        filterValues[key] = filterValues[key] || {};
+        filterValues[key].val = input.value;
+        renderTable();
+      });
+      th.appendChild(input);
+      valRow.appendChild(th);
+    });
+    valRow.appendChild(document.createElement('th'));
+    thead.appendChild(valRow);
+  }
+
+  // Load initial entries
   async function loadEntries() {
     const { data, error } = await supabaseClient
-      .from('south1_entries')
+      .from(tableName)
       .select('*')
       .order('created_at', { ascending: false });
-    if (error) {
-      console.error('Fetch error:', error);
-      return;
-    }
+    if (error) return console.error('Fetch error:', error);
     entries = data;
     renderTable();
   }
 
-  // 6️⃣ Realtime subscribe (INSERT/UPDATE/DELETE)
+  // Real-time subscription
   supabaseClient
-    .channel('public:south1_entries')
-    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'south1_entries' },
-      ({ new: row }) => { entries.unshift(row); renderTable(); })
-    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'south1_entries' },
-      ({ new: row }) => {
-        const i = entries.findIndex(e => e.id === row.id);
-        if (i > -1) entries[i] = row;
-        renderTable();
-      })
-    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'south1_entries' },
-      ({ old: row }) => {
-        entries = entries.filter(e => e.id !== row.id);
-        renderTable();
-      })
+    .channel(`public:${tableName}`)
+    .on('postgres_changes', { event: '*', schema: 'public', table: tableName }, payload => {
+      if (payload.eventType === 'INSERT') entries.unshift(payload.new);
+      if (payload.eventType === 'UPDATE') {
+        const i = entries.findIndex(e => e.id === payload.new.id);
+        if (i > -1) entries[i] = payload.new;
+      }
+      if (payload.eventType === 'DELETE') {
+        entries = entries.filter(e => e.id !== payload.old.id);
+      }
+      renderTable();
+    })
     .subscribe();
 
-  loadEntries();
+  // Pad → Well cascade
+  padSelect.addEventListener('change', () => {
+    wellSelect.innerHTML = '<option value="">-- Select Well --</option>';
+    if (!padSelect.value) return;
+    for (let i = 1; i <= 5; i++) {
+      wellSelect.appendChild(new Option(
+        `${padSelect.value}_Well_${i}`,
+        `${padSelect.value}_Well_${i}`
+      ));
+    }
+  });
 
-  // 7️⃣ Handle form submit → INSERT with user_email
-  form?.addEventListener('submit', async e => {
+  // Handle new-entry form
+  form.addEventListener('submit', async e => {
     e.preventDefault();
     const payload = { user_email: currentEmail };
     fields.forEach(f => {
       payload[f] = form.elements[f]?.value || null;
     });
-
     const { data, error } = await supabaseClient
-      .from('south1_entries')
+      .from(tableName)
       .insert([payload])
       .select();
-
     if (error) {
-      console.error('Insert error:', error);
-      return alert(`Insert failed: ${error.message}`);
+      alert(`Insert failed: ${error.message}`);
+      return;
     }
-
     entries.unshift(data[0]);
     renderTable();
     form.reset();
   });
 
-  // 8️⃣ Render table + filters + inline edit + delete
+  // Render table: apply filters, sort, then draw rows + totals
   function renderTable() {
-    tableBody.innerHTML = '';
-    const uniq = key => [...new Set(entries.map(e => e[key]).filter(Boolean))];
+    tbody.innerHTML = '';
+    let data = [...entries];
 
-    // rebuild filters (preserve selection)
-    if (dateFilter) {
-      const prev = dateFilter.value;
-      dateFilter.innerHTML =
-        `<option value="">All Dates</option>` +
-        uniq('entry_date').map(v => `<option value="${v}">${v}</option>`).join('');
-      dateFilter.value = prev;
-    }
-    if (padFilter) {
-      const prev = padFilter.value;
-      padFilter.innerHTML =
-        `<option value="">All PADs</option>` +
-        uniq('pad').map(v => `<option value="${v}">${v}</option>`).join('');
-      padFilter.value = prev;
-    }
-    if (wellFilter) {
-      const prev = wellFilter.value;
-      wellFilter.innerHTML =
-        `<option value="">All Wells</option>` +
-        uniq('well').map(v => `<option value="${v}">${v}</option>`).join('');
-      wellFilter.value = prev;
-    }
-
-    // read filters
-    const df = dateFilter.value, pf = padFilter.value, wf = wellFilter.value;
-
-    // draw rows
-    entries
-      .filter(e =>
-        (!df || e.entry_date === df) &&
-        (!pf || e.pad        === pf) &&
-        (!wf || e.well       === wf)
-      )
-      .forEach(entry => {
-        const tr = document.createElement('tr');
-
-        // data cells
-        fields.forEach(key => {
-          const td = document.createElement('td');
-          td.textContent = entry[key] ?? '';
-          td.contentEditable = entry.user_email === currentEmail; // only owner edits
-          td.addEventListener('blur', async () => {
-            const newVal = td.textContent.trim() || null;
-            if (newVal === entry[key]) return;
-            const { error } = await supabaseClient
-              .from('south1_entries')
-              .update({ [key]: newVal })
-              .eq('id', entry.id);
-            if (error) {
-              console.error('Update failed:', error);
-              return alert(`Update failed: ${error.message}`);
-            }
-            entry[key] = newVal;
-            renderTable();
-          });
-          tr.appendChild(td);
-        });
-
-        // action cell (delete only for owner)
-        const tdAction = document.createElement('td');
-        if (entry.user_email === currentEmail) {
-          const btn = document.createElement('button');
-          btn.textContent = 'Delete';
-          btn.addEventListener('click', async () => {
-            const { error } = await supabaseClient
-              .from('south1_entries')
-              .delete()
-              .eq('id', entry.id);
-            if (error) {
-              console.error('Delete failed:', error);
-              return alert(`Delete failed: ${error.message}`);
-            }
-            entries = entries.filter(e => e.id !== entry.id);
-            renderTable();
-          });
-          tdAction.appendChild(btn);
+    // 1) filtering
+    data = data.filter(row => {
+      return fields.every(key => {
+        const fv = filterValues[key] || {};
+        const op = fv.op, val = fv.val;
+        if (!op || !val) return true;
+        const cell = (row[key] ?? '').toString();
+        const lc = cell.toLowerCase(), v = val.toLowerCase();
+        switch (op) {
+          case '=': return lc === v;
+          case 'contains': return lc.includes(v);
+          case '<': return parseFloat(cell) < parseFloat(val);
+          case '<=': return parseFloat(cell) <= parseFloat(val);
+          case '>': return parseFloat(cell) > parseFloat(val);
+          case '>=': return parseFloat(cell) >= parseFloat(val);
+          case 'between': {
+            const parts = val.split(',').map(x => parseFloat(x.trim()));
+            const n = parseFloat(cell);
+            return parts.length === 2 && n >= parts[0] && n <= parts[1];
+          }
+          default: return true;
         }
-        tr.appendChild(tdAction);
-
-        tableBody.appendChild(tr);
       });
+    });
+
+    // 2) sorting
+    if (sortKey) {
+      data.sort((a, b) => {
+        let av = a[sortKey], bv = b[sortKey];
+        const na = parseFloat(av), nb = parseFloat(bv);
+        if (!isNaN(na) && !isNaN(nb)) { av = na; bv = nb; }
+        if (av < bv) return sortDir === 'asc' ? -1 : 1;
+        if (av > bv) return sortDir === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+
+    // 3) rows
+    data.forEach(entry => {
+      const tr = document.createElement('tr');
+      fields.forEach(key => {
+        const td = document.createElement('td');
+        td.textContent = entry[key] ?? '';
+        td.contentEditable = entry.user_email === currentEmail;
+        td.addEventListener('blur', async () => {
+          const nv = td.textContent.trim() || null;
+          if (nv === entry[key]) return;
+          await supabaseClient
+            .from(tableName)
+            .update({ [key]: nv })
+            .eq('id', entry.id);
+          entry[key] = nv;
+        });
+        tr.appendChild(td);
+      });
+      // action cell
+      const ac = document.createElement('td');
+      if (entry.user_email === currentEmail) {
+        const btn = document.createElement('button');
+        btn.textContent = 'Delete';
+        btn.addEventListener('click', async () => {
+          await supabaseClient
+            .from(tableName)
+            .delete()
+            .eq('id', entry.id);
+        });
+        ac.appendChild(btn);
+      }
+      tr.appendChild(ac);
+      tbody.appendChild(tr);
+    });
+
+    // 4) totals row
+    const totals = {};
+    fields.forEach(k => totals[k] = 0);
+    data.forEach(r =>
+      fields.forEach(k => {
+        const n = parseFloat(r[k]);
+        if (!isNaN(n)) totals[k] += n;
+      })
+    );
+    const trT = document.createElement('tr');
+    trT.className = 'total-row';
+    fields.forEach((k, i) => {
+      const td = document.createElement('td');
+      td.textContent = i === 0
+        ? 'Total'
+        : (totals[k] ? totals[k].toFixed(2) : '');
+      trT.appendChild(td);
+    });
+    trT.appendChild(document.createElement('td'));
+    tbody.appendChild(trT);
   }
 
-  // 9️⃣ Export CSV
-  exportBtn?.addEventListener('click', () => {
-    const header = ['user_email', ...fields].join(',');
-    const rows = entries.map(e =>
-      [e.user_email, ...fields.map(f => e[f] ?? '')].join(',')
-    );
-    const csv = [header, ...rows].join('\n');
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
-    a.download = 'south1_data.csv';
-    a.click();
-  });
-
-  // 🔍 Filters & 🌙 Dark mode toggle
-  [dateFilter, padFilter, wellFilter].forEach(el =>
-    el?.addEventListener('change', renderTable)
-  );
+  // Dark-mode toggle
   toggleBtn?.addEventListener('click', () =>
     document.body.classList.toggle('dark-mode')
   );
+
+  // Initialize
+  buildHeader();
+  loadEntries();
 });
