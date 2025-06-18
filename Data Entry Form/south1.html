@@ -192,123 +192,56 @@
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
 <script>
   document.addEventListener('DOMContentLoaded', () => {
-    Chart.register(
-      Chart.LineController, Chart.LineElement, Chart.PointElement,
-      Chart.TimeScale, Chart.LinearScale,
-      Chart.Tooltip, Chart.Legend
-    );
+    Chart.register(Chart.LineController, Chart.LineElement, Chart.PointElement, Chart.TimeScale, Chart.LinearScale, Chart.Tooltip, Chart.Legend);
 
     const table = document.getElementById('previewTable');
-    const var1Select = document.getElementById('var1Select'); // Y-axis
-    const var2Select = document.getElementById('var2Select'); // X-axis
-    const var3Select = document.getElementById('var3Select'); // Y2-axis
+    const var1 = document.getElementById('var1Select');
+    const var2 = document.getElementById('var2Select');
+    const var3 = document.getElementById('var3Select');
     const analysisDiv = document.getElementById('analysis');
     const ctx = document.getElementById('combinedChart').getContext('2d');
     let chart;
+    const mapIndex = { entry_date:0, pad:1, well:2, tub_press:3, cas_press:4, speed:5, fluid_level:6, torque:7, oil_press:8, oil_level:9, frecuenze:10, tank_volume:11, free_water:12, bsw_tank:13, tank_temp:14, water_diluent:15, diesel_propane:16, chmc:17 };
 
-    const mapIndex = { entry_date:0, pad:1, well:2, tub_press:3, cas_press:4, speed:5,
-      fluid_level:6, torque:7, oil_press:8, oil_level:9, frecuenze:10,
-      tank_volume:11, free_water:12, bsw_tank:13, tank_temp:14,
-      water_diluent:15, diesel_propane:16, chmc:17 };
-
-    function computeStats(vals, key) {
-      const s = {};
-      if (key === 'entry_date') {
-        const d = vals.map(v=>new Date(v)).filter(d=>!isNaN(d)).sort((a,b)=>a-b);
-        s.min = d[0]; s.max = d[d.length-1]; s.count = d.length;
-      } else {
-        const n = vals.map(v=>parseFloat(v)).filter(n=>!isNaN(n));
-        const count = n.length;
-        const sum = n.reduce((a,b)=>a+b,0);
-        const mean = sum/count;
-        const variance = n.map(v=>Math.pow(v-mean,2)).reduce((a,b)=>a+b,0)/count;
-        s.count = count; s.sum = sum; s.mean = mean;
-        s.min = Math.min(...n); s.max = Math.max(...n);
-        const sorted = n.sort((a,b)=>a-b);
-        s.median = count%2 ? sorted[(count-1)/2] : (sorted[count/2-1] + sorted[count/2])/2;
-        s.stdDev = Math.sqrt(variance);
-      }
-      return s;
+    function computeStats(vals) {
+      const nums = vals.map(v=>parseFloat(v)).filter(n=>!isNaN(n));
+      const count = nums.length;
+      const min = Math.min(...nums);
+      const max = Math.max(...nums);
+      const sum = nums.reduce((a,b)=>a+b,0);
+      const mean = sum/count;
+      const sorted = nums.slice().sort((a,b)=>a-b);
+      const median = count%2?sorted[(count-1)/2]:(sorted[count/2-1]+sorted[count/2])/2;
+      const variance = nums.map(n=>Math.pow(n-mean,2)).reduce((a,b)=>a+b,0)/count;
+      const stdDev = Math.sqrt(variance);
+      const rate = (nums[count-1]-nums[0]) / (count-1 || 1);
+      return {count, min, max, mean, median, variance, stdDev, rate};
     }
 
-    function updateAnalysis(xKey, yKey, zKey, rawX, rawY, rawZ) {
-      const X = computeStats(rawX, xKey);
-      const Y = computeStats(rawY, yKey);
-      const Z = computeStats(rawZ, zKey);
-      let html = '<h3>Data Analysis</h3><ul>';
-      html += `<li><strong>${var2Select.options[var2Select.selectedIndex].text}:</strong> count ${X.count}` +
-              (xKey!=='entry_date' ? `, sum ${X.sum.toFixed(2)}, mean ${X.mean.toFixed(2)}` : '') +
-              '</li>';
-      html += `<li><strong>${var1Select.options[var1Select.selectedIndex].text}:</strong> count ${Y.count}, sum ${Y.sum.toFixed(2)}, mean ${Y.mean.toFixed(2)}</li>`;
-      html += `<li><strong>${var3Select.options[var3Select.selectedIndex].text}:</strong> count ${Z.count}, sum ${Z.sum.toFixed(2)}, mean ${Z.mean.toFixed(2)}</li>`;
-      html += '</ul>';
+    function updateAnalysis(xKey,yKey,zKey,rawX,rawY,rawZ){
+      const A = computeStats(rawY); // primary
+      const B = computeStats(rawZ); // secondary
+      let html = '<h3>Data Analysis</h3>' +
+                 `<p><strong>${var1.options[var1.selectedIndex].text}:</strong> count ${A.count}, min ${A.min.toFixed(2)}, max ${A.max.toFixed(2)}, mean ${A.mean.toFixed(2)}, median ${A.median.toFixed(2)}, stdev ${A.stdDev.toFixed(2)}, variance ${A.variance.toFixed(2)}, rate ${A.rate.toFixed(2)}</p>` +
+                 `<p><strong>${var3.options[var3.selectedIndex].text}:</strong> count ${B.count}, min ${B.min.toFixed(2)}, max ${B.max.toFixed(2)}, mean ${B.mean.toFixed(2)}, median ${B.median.toFixed(2)}, stdev ${B.stdDev.toFixed(2)}, variance ${B.variance.toFixed(2)}, rate ${B.rate.toFixed(2)}</p>`;
       analysisDiv.innerHTML = html;
     }
 
-    function updateChart() {
-      const yKey = var1Select.value;
-      const xKey = var2Select.value;
-      const zKey = var3Select.value;
-      const rows = Array.from(table.querySelectorAll('tbody tr'));
-      if (!rows.length) return;
-
-      const points = rows.map(r => {
-        const c = r.querySelectorAll('td');
-        const rawX = c[mapIndex[xKey]].innerText;
-        const rawY = c[mapIndex[yKey]].innerText;
-        const rawZ = c[mapIndex[zKey]].innerText;
-        const x = xKey==='entry_date' ? new Date(rawX) : parseFloat(rawX);
-        const y = parseFloat(rawY);
-        const z = parseFloat(rawZ);
-        if (isNaN(x) || isNaN(y) || isNaN(z)) return null;
-        return { x, y, z, rawX, rawY, rawZ };
-      }).filter(p => p);
-
-      points.sort((a,b) => a.x - b.x);
-
-      const labels = points.map(p => p.x);
-      const dataY = points.map(p => p.y);
-      const dataZ = points.map(p => p.z);
-      const rawX = points.map(p => p.rawX);
-      const rawY = points.map(p => p.rawY);
-      const rawZ = points.map(p => p.rawZ);
-
-      updateAnalysis(xKey, yKey, zKey, rawX, rawY, rawZ);
-
-      const statsX = computeStats(rawX, xKey);
-      const statsY = computeStats(rawY, yKey);
-      const statsZ = computeStats(rawZ, zKey);
-
-      const data = {
-        labels,
-        datasets: [
-          { label: var1Select.options[var1Select.selectedIndex].text, data: dataY, yAxisID: 'y', fill: false, tension: 0.1, pointRadius: 3 },
-          { label: var3Select.options[var3Select.selectedIndex].text, data: dataZ, yAxisID: 'y1', fill: false, tension: 0.1, pointRadius: 3 }
-        ]
-      };
-
-      const options = {
-        responsive: true,
-        scales: {
-          x: { type: xKey==='entry_date' ? 'time' : 'linear', time: { unit: 'day', displayFormats: { day: 'MM/dd/yyyy' } }, min: statsX.min, max: statsX.max, title: { display: true, text: var2Select.options[var2Select.selectedIndex].text } },
-          y: { position: 'left', min: statsY.min, max: statsY.max, title: { display: true, text: var1Select.options[var1Select.selectedIndex].text } },
-          y1: { position: 'right', min: statsZ.min, max: statsZ.max, grid: { drawOnChartArea: false }, title: { display: true, text: var3Select.options[var3Select.selectedIndex].text } }
-        },
-        plugins: { zoom: { zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'xy' }, pan: { enabled: true, mode: 'xy' } } }
-      };
-
-      if (chart) {
-        chart.data = data;
-        chart.options = options;
-        chart.update();
-      } else {
-        chart = new Chart(ctx, { type: 'line', data, options });
-      }
+    function updateChart(){
+      const xKey=var2.value, yKey=var1.value, zKey=var3.value;
+      const rows=Array.from(table.querySelectorAll('tbody tr'));
+      const pts = rows.map(r=>{const c=r.querySelectorAll('td'); const x=c[mapIndex[xKey]].innerText; const y=c[mapIndex[yKey]].innerText; const z=c[mapIndex[zKey]].innerText; return (!isNaN(parseFloat(x))&& !isNaN(parseFloat(y))&& !isNaN(parseFloat(z)))?{x:xKey==='entry_date'?new Date(x):+x, y:+y, z:+z, rawY:y, rawZ:z}:null;}).filter(p=>p);
+      pts.sort((a,b)=>a.x - b.x);
+      const labels = pts.map(p=>p.x), dataY=pts.map(p=>p.y), dataZ=pts.map(p=>p.z), rawY=pts.map(p=>p.rawY), rawZ=pts.map(p=>p.rawZ);
+      updateAnalysis(xKey,yKey,zKey,null, rawY, rawZ);
+      const sY=computeStats(rawY), sZ=computeStats(rawZ);
+      const data={labels,datasets:[{label:var1.options[var1.selectedIndex].text,data:dataY,yAxisID:'y',fill:false},{label:var3.options[var3.selectedIndex].text,data:dataZ,yAxisID:'y1',fill:false}]};
+      const options={responsive:true,scales:{x:{type:xKey==='entry_date'?'time':'linear',time:{unit:'day'}},y:{position:'left',min:sY.min,max:sY.max},y1:{position:'right',min:sZ.min,max:sZ.max,grid:{drawOnChartArea:false}}},plugins:{zoom:{zoom:{wheel:{enabled:true},pinch:{enabled:true},mode:'xy'},pan:{enabled:true,mode:'xy'}}}};
+      if(chart){chart.data=data;chart.options=options;chart.update();}else{chart=new Chart(ctx,{type:'line',data,options});}
     }
-
-    var1Select.addEventListener('change', updateChart);
-    var2Select.addEventListener('change', updateChart);
-    var3Select.addEventListener('change', updateChart);
+    var1.addEventListener('change',updateChart);
+    var2.addEventListener('change',updateChart);
+    var3.addEventListener('change',updateChart);
     updateChart();
   });
 </script>
