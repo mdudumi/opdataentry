@@ -264,12 +264,26 @@
       const options = {
         responsive: true,
         scales: {
-          x: { type: xKey === 'entry_date' ? 'time' : 'linear' },
+          x: {
+            type: xKey === 'entry_date' ? 'time' : 'linear',
+            time: {
+              unit: 'day',
+              displayFormats: { day: 'MM/dd/yyyy' }
+            },
+            ticks: {
+              autoSkip: true,
+              maxRotation: 45,
+              minRotation: 45
+            }
+          },
           y: { position: 'left', min: sY.min, max: sY.max },
           y1: { position: 'right', min: sZ.min, max: sZ.max, grid: { drawOnChartArea: false } }
         },
         plugins: {
-          zoom: { zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'xy' }, pan: { enabled: true, mode: 'xy' } }
+          zoom: {
+            zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'xy' },
+            pan: { enabled: true, mode: 'xy', threshold: 10 }
+          }
         }
       };
       if (chart) {
