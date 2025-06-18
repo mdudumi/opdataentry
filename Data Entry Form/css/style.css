@@ -36,10 +36,12 @@ header {
 .header-buttons {
   display: flex;
   gap: 0.8rem;
-  align-items: right;
+  align-items: center;
+  margin-left: auto;
 }
 
-.return-button, #toggleMode {
+.return-button, 
+#toggleMode {
   background-color: #007bff;
   color: white;
   text-decoration: none;
@@ -53,7 +55,8 @@ header {
   border: none;
 }
 
-.return-button:hover, #toggleMode:hover {
+.return-button:hover, 
+#toggleMode:hover {
   background-color: #0056b3;
 }
 
@@ -67,7 +70,8 @@ header {
   overflow: auto;
 }
 
-.left-pane, .right-pane {
+.left-pane, 
+.right-pane {
   background: white;
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
@@ -98,7 +102,8 @@ form label {
   font-size: 0.9rem;
 }
 
-form input, form select {
+form input, 
+form select {
   width: 100%;
   padding: 0.5rem 0.7rem;
   border: 1.5px solid #d1d9e6;
@@ -107,7 +112,8 @@ form input, form select {
   transition: border-color 0.3s ease;
 }
 
-form input:focus, form select:focus {
+form input:focus, 
+form select:focus {
   outline: none;
   border-color: #4a90e2;
   box-shadow: 0 0 6px #4a90e2aa;
@@ -120,7 +126,8 @@ form input:focus, form select:focus {
   font-size: 0.9rem;
 }
 
-#previewTable th, #previewTable td {
+#previewTable th, 
+#previewTable td {
   border: 1px solid #d1d9e6;
   padding: 0.6rem;
   text-align: left;
@@ -141,7 +148,9 @@ form input:focus, form select:focus {
   color: #eee;
 }
 
-.dark-mode header, .dark-mode .left-pane, .dark-mode .right-pane {
+.dark-mode header, 
+.dark-mode .left-pane, 
+.dark-mode .right-pane {
   background-color: #1e1e1e;
   box-shadow: 0 4px 12px rgba(255, 255, 255, 0.07);
 }
@@ -184,7 +193,8 @@ form input:focus, form select:focus {
     padding: 1rem 1rem;
   }
 
-  .left-pane, .right-pane {
+  .left-pane, 
+  .right-pane {
     flex: none;
     width: 100%;
     min-width: auto;
