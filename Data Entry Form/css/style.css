@@ -295,28 +295,33 @@ body.dark-mode .return-button {
   }
 }
 
-/* Ensure filter inputs look like inputs */
+/* 1) Fixed layout so columns respect min-width */
+#previewTable {
+  width: 100%;
+  table-layout: fixed;
+}
+
+/* 2) Increase min-width of each column */
+#previewTable th,
+#previewTable td {
+  min-width: 140px;   /* adjust up or down as you like */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 3) Make filter controls fill their (now larger) cells */
 #previewTable thead tr:nth-of-type(2) th select,
 #previewTable thead tr:nth-of-type(2) th input {
-  background-color: #fff !important;
-  color: #000 !important;
-  border: 1px solid #ccc !important;
-  border-radius: 4px !important;
-  padding: 0.35rem 0.5rem !important;
-  font-size: 0.9rem !important;
+  width: 100% !important;
 }
 
-/* Make sure placeholder text is visible */
+/* 4) Ensure the placeholder and text remain legible */
 #previewTable thead tr:nth-of-type(2) th input::placeholder {
-  color: #888 !important;
+  color: #666 !important;
 }
 
-/* Optional: slightly taller header row so controls aren’t cramped */
-#previewTable thead tr:nth-of-type(2) th {
-  height: 2.5rem;
-}
-
-/* Totals row shading (reaffirmed) */
+/* 5) Totals row reaffirm */
 #previewTable tbody tr.total-row {
   background-color: rgba(0, 123, 255, 0.15) !important;
   color: #000 !important;
