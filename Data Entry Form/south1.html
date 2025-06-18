@@ -120,12 +120,13 @@
       </table>
 	</div>	    
               <!-- Analysis Section -->
-    <div class="analysis-wrapper" id="analysis"></div>
-    <!-- Chart Controls -->
+     <div class="analysis-wrapper" id="analysis"></div>
     <div class="chart-controls">
-      <label for="xSelect">X-Axis:</label>
-      <select id="xSelect">
+      <label for="var2Select">Horizontal (X) Variable:</label>
+      <select id="var2Select">
         <option value="entry_date">Entry Date</option>
+        <option value="pad">Pad</option>
+        <option value="well">Well</option>
         <option value="tub_press">Tubing Pressure</option>
         <option value="cas_press">Casing Pressure</option>
         <option value="speed">Speed</option>
@@ -142,9 +143,26 @@
         <option value="diesel_propane">Diesel Propane</option>
         <option value="chmc">CHMC</option>
       </select>
-      <label for="ySelect">Y-Axis:</label>
-      <select id="ySelect">
-        <option value="entry_date">Entry Date</option>
+      <label for="var1Select">Primary Vertical (Y) Variable:</label>
+      <select id="var1Select">
+        <option value="tub_press">Tubing Pressure</option>
+        <option value="cas_press">Casing Pressure</option>
+        <option value="speed">Speed</option>
+        <option value="fluid_level">Fluid Level</option>
+        <option value="torque">Torque</option>
+        <option value="oil_press">Oil Pressure</option>
+        <option value="oil_level">Oil Level</option>
+        <option value="frecuenze">Frequency</option>
+        <option value="tank_volume">Tank Volume</option>
+        <option value="free_water">Free Water</option>
+        <option value="bsw_tank">BSW Tank</option>
+        <option value="tank_temp">Tank Temperature</option>
+        <option value="water_diluent">Water Diluent</option>
+        <option value="diesel_propane">Diesel Propane</option>
+        <option value="chmc">CHMC</option>
+      </select>
+      <label for="var3Select">Secondary Vertical (Y2) Variable:</label>
+      <select id="var3Select">
         <option value="tub_press">Tubing Pressure</option>
         <option value="cas_press">Casing Pressure</option>
         <option value="speed">Speed</option>
@@ -167,7 +185,6 @@
     </div>
   </div>
 </div>
-
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 <script src="js/south1.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
