@@ -119,6 +119,10 @@
         <tbody></tbody>
       </table>
 	</div>	
+       <!-- Analysis Section -->
+    <div class="analysis-wrapper" id="analysis">
+      <!-- dynamic stats inserted here -->
+    </div>
     <!-- Chart Controls -->
     <div class="chart-controls">
       <label for="xSelect">X-Axis:</label>
@@ -174,6 +178,7 @@
     const table = document.getElementById('previewTable');
     const xSelect = document.getElementById('xSelect');
     const ySelect = document.getElementById('ySelect');
+    const analysisDiv = document.getElementById('analysis');
     const ctx = document.getElementById('combinedChart').getContext('2d');
     let chart;
 
@@ -184,21 +189,57 @@
       water_diluent:15, diesel_propane:16, chmc:17
     };
 
+    function computeStats(values, key) {
+      if (key === 'entry_date') {
+        const dates = values.map(v => new Date(v)).sort((a,b) => a - b);
+        return { min: dates[0].toLocaleDateString(), max: dates[dates.length-1].toLocaleDateString() };
+      }
+      const nums = values.map(v => parseFloat(v) || 0);
+      const sum = nums.reduce((a,b)=>a+b,0);
+      const mean = (sum/nums.length).toFixed(2);
+      const min = Math.min(...nums).toFixed(2);
+      const max = Math.max(...nums).toFixed(2);
+      const sorted = nums.slice().sort((a,b)=>a-b);
+      const mid = Math.floor(nums.length/2);
+      const median = (nums.length%2 ? sorted[mid] : ((sorted[mid-1]+sorted[mid])/2)).toFixed(2);
+      return { mean, min, max, median };
+    }
+
+    function updateAnalysis(xKey, yKey, rawX, rawY) {
+      const statsX = computeStats(rawX, xKey);
+      const statsY = computeStats(rawY, yKey);
+      let html = '<h3>Data Analysis</h3><ul>';
+      html += `<li><strong>${xSelect.options[xSelect.selectedIndex].text}:</strong> `;
+      if (xKey === 'entry_date') html += `From ${statsX.min} to ${statsX.max}`;
+      else html += `Mean: ${statsX.mean}, Min: ${statsX.min}, Max: ${statsX.max}, Median: ${statsX.median}`;
+      html += '</li>';
+      html += `<li><strong>${ySelect.options[ySelect.selectedIndex].text}:</strong> `;
+      if (yKey === 'entry_date') html += `From ${statsY.min} to ${statsY.max}`;
+      else html += `Mean: ${statsY.mean}, Min: ${statsY.min}, Max: ${statsY.max}, Median: ${statsY.median}`;
+      html += '</li></ul>';
+      analysisDiv.innerHTML = html;
+    }
+
     function updateChart() {
       const xKey = xSelect.value;
       const yKey = ySelect.value;
       const rows = table.querySelectorAll('tbody tr');
       const points = [];
+      const rawX = [];
+      const rawY = [];
+
       rows.forEach(row => {
         const cells = row.querySelectorAll('td');
-        let xVal = cells[mapIndex[xKey]].innerText;
-        let yVal = cells[mapIndex[yKey]].innerText;
-        if (xKey === 'entry_date') xVal = new Date(xVal);
-        else xVal = parseFloat(xVal) || 0;
-        if (yKey === 'entry_date') yVal = new Date(yVal);
-        else yVal = parseFloat(yVal) || 0;
+        const xv = cells[mapIndex[xKey]].innerText;
+        const yv = cells[mapIndex[yKey]].innerText;
+        rawX.push(xv);
+        rawY.push(yv);
+        const xVal = xKey === 'entry_date' ? new Date(xv) : parseFloat(xv) || 0;
+        const yVal = yKey === 'entry_date' ? new Date(yv) : parseFloat(yv) || 0;
         points.push({ x: xVal, y: yVal });
       });
+
+      updateAnalysis(xKey, yKey, rawX, rawY);
 
       const dataset = [{
         label: `${xSelect.options[xSelect.selectedIndex].text} vs ${ySelect.options[ySelect.selectedIndex].text}`,
@@ -223,6 +264,7 @@
     updateChart();
   });
 </script>
+	
     </div>
   </div>
 
