@@ -16,17 +16,18 @@
     canvas { background: #fff; border: 1px solid #ccc; display: block; margin: auto; }
   </style>
 
-  <!-- Supabase JS SDK -->
+  <!-- Supabase JS SDK (UMD build) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-  <!-- Your Supabase credentials -->
+  <!-- Your Supabase credentials + client -->
   <script>
     const SUPABASE_URL = 'https://nrkakpjugxncfyrgtpfr.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ya2FrcGp1Z3huY2Z5cmd0cGZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAxOTMyNjcsImV4cCI6MjA2NTc2OTI2N30.FzWYbNT792RH6rpxSr9OKlcjMV6qIuVL4oq_W9lsmQs';
-    // Initialize Supabase client
+    // UMD exposes a global named `supabase` with createClient()
     const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    console.log('Supabase client inited');
   </script>
 </head>
 <body>
@@ -37,14 +38,8 @@
 
   <main>
     <div class="controls">
-      <label>
-        X-Axis:
-        <select id="xSelect"></select>
-      </label>
-      <label>
-        Y-Axis:
-        <select id="ySelect"></select>
-      </label>
+      <label>X-Axis:<select id="xSelect"></select></label>
+      <label>Y-Axis:<select id="ySelect"></select></label>
       <button id="updateBtn">Update Chart</button>
     </div>
     <canvas id="chartCanvas" width="800" height="400"></canvas>
@@ -52,35 +47,34 @@
 
   <script>
     (async () => {
-      // Back to entries page
-      document.getElementById('backBtn').onclick = () => {
-        window.location.href = 'south1.html';
-      };
+      // allow going back
+      document.getElementById('backBtn').onclick = () => window.location.href = 'south1.html';
 
-      // Fetch all rows from your table
-      const { data: entries, error } = await supabase
-        .from('south1_entries')
-        .select('*');
+      // fetch data
+      console.log('Fetching entries…');
+      const { data: entries, error } = await supabase.from('south1_entries').select('*');
       if (error) {
         console.error('Fetch error:', error);
-        alert('Error loading data. See console.');
+        alert('Error loading data; see console.');
         return;
       }
       if (!entries || !entries.length) {
-        alert('No data available to chart.');
+        alert('No data available.');
         return;
       }
+      console.log(`Loaded ${entries.length} rows`);
 
-      // Sort by entry_date if present
+      // sort by entry_date if present
       if ('entry_date' in entries[0]) {
-        entries.sort((a, b) => new Date(a.entry_date) - new Date(b.entry_date));
+        entries.sort((a,b) => new Date(a.entry_date) - new Date(b.entry_date));
       }
 
-      // Determine fields & numeric subset
+      // field lists
       const fields = Object.keys(entries[0]);
-      const numericFields = fields.filter(k => !isNaN(parseFloat(entries[0][k])));
+      const numericFields = fields.filter(f => !isNaN(parseFloat(entries[0][f])));
+      console.log('Fields:', fields, 'Numeric:', numericFields);
 
-      // Populate dropdowns
+      // fill selects
       const xSelect = document.getElementById('xSelect');
       const ySelect = document.getElementById('ySelect');
       fields.forEach(f => {
@@ -90,30 +84,21 @@
       xSelect.value = fields.includes('entry_date') ? 'entry_date' : fields[0];
       ySelect.value = numericFields.includes('tub_press') ? 'tub_press' : (numericFields[0] || fields[1]);
 
-      // Chart.js instance
-      let chart;
+      // prepare Chart.js
       const ctx = document.getElementById('chartCanvas').getContext('2d');
+      let chart;
       function renderChart() {
-        const xKey = xSelect.value;
-        const yKey = ySelect.value;
+        const xKey = xSelect.value, yKey = ySelect.value;
+        console.log(`Rendering chart: X=${xKey}, Y=${yKey}`);
         const labels = entries.map(r => r[xKey]);
         const data = entries.map(r => {
-          const val = parseFloat(r[yKey]);
-          return isNaN(val) ? null : val;
+          const v = parseFloat(r[yKey]);
+          return isNaN(v) ? null : v;
         });
-
         if (chart) chart.destroy();
         chart = new Chart(ctx, {
           type: 'line',
-          data: {
-            labels,
-            datasets: [{
-              label: yKey,
-              data,
-              fill: false,
-              tension: 0.1
-            }]
-          },
+          data: { labels, datasets: [{ label: yKey, data, fill: false, tension:0.1 }] },
           options: {
             responsive: true,
             scales: {
@@ -124,7 +109,7 @@
         });
       }
 
-      // Initial draw
+      // initial + button
       renderChart();
       document.getElementById('updateBtn').onclick = renderChart;
     })();
