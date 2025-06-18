@@ -339,7 +339,7 @@ body.dark-mode .return-button {
 /* Apply the same width to every column header and cell */
 #previewTable th,
 #previewTable td {
-  width: 120px;           /* your desired column width */
+  width: 150px;           /* your desired column width */
   box-sizing: border-box;
   overflow: hidden;
   text-overflow: ellipsis;
