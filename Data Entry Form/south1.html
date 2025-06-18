@@ -119,7 +119,7 @@
         <tbody></tbody>
       </table>
 	</div>	    
-           <!-- Analysis Section -->
+               <!-- Analysis Section -->
     <div class="analysis-wrapper" id="analysis"></div>
     <!-- Chart Controls -->
     <div class="chart-controls">
@@ -170,29 +170,67 @@
       water_diluent:15, diesel_propane:16, chmc:17 };
 
     function computeStats(values, key) {
+      const stats = {};
       if (key === 'entry_date') {
         const dates = values.map(v => new Date(v)).sort((a,b) => a - b);
-        return { min: dates[0].toLocaleDateString(), max: dates[dates.length-1].toLocaleDateString() };
+        stats.min = dates[0].toLocaleDateString();
+        stats.max = dates[dates.length-1].toLocaleDateString();
+        stats.count = dates.length;
+      } else {
+        const nums = values.map(v => parseFloat(v) || 0);
+        const count = nums.length;
+        const sum = nums.reduce((a,b)=>a+b,0);
+        const mean = sum/count;
+        const squaredDiffs = nums.map(n => Math.pow(n-mean,2));
+        const variance = squaredDiffs.reduce((a,b)=>a+b,0)/count;
+        const stdDev = Math.sqrt(variance);
+        const min = Math.min(...nums);
+        const max = Math.max(...nums);
+        const sorted = nums.slice().sort((a,b)=>a-b);
+        const median = count%2 ? sorted[Math.floor(count/2)] : (sorted[count/2-1]+sorted[count/2])/2;
+        stats.count = count;
+        stats.mean = mean.toFixed(2);
+        stats.min = min.toFixed(2);
+        stats.max = max.toFixed(2);
+        stats.median = median.toFixed(2);
+        stats.variance = variance.toFixed(2);
+        stats.stdDev = stdDev.toFixed(2);
       }
-      const nums = values.map(v => parseFloat(v) || 0);
-      const sum = nums.reduce((a,b)=>a+b,0);
-      const mean = (sum/nums.length).toFixed(2);
-      const min = Math.min(...nums).toFixed(2);
-      const max = Math.max(...nums).toFixed(2);
-      const sorted = nums.slice().sort((a,b)=>a-b);
-      const median = nums.length%2 ? sorted[Math.floor(sorted.length/2)] : ((sorted[sorted.length/2-1]+sorted[sorted.length/2])/2).toFixed(2);
-      return { mean, min, max, median };
+      return stats;
+    }
+
+    function computeCorrelation(xVals, yVals) {
+      const xs = xVals.map(v => parseFloat(v)||0);
+      const ys = yVals.map(v => parseFloat(v)||0);
+      const n = xs.length;
+      const meanX = xs.reduce((a,b)=>a+b,0)/n;
+      const meanY = ys.reduce((a,b)=>a+b,0)/n;
+      const cov = xs.map((x,i)=> (x-meanX)*(ys[i]-meanY)).reduce((a,b)=>a+b,0)/n;
+      const stdX = Math.sqrt(xs.map(x=>Math.pow(x-meanX,2)).reduce((a,b)=>a+b,0)/n);
+      const stdY = Math.sqrt(ys.map(y=>Math.pow(y-meanY,2)).reduce((a,b)=>a+b,0)/n);
+      return stdX && stdY ? (cov/(stdX*stdY)).toFixed(2) : 'N/A';
     }
 
     function updateAnalysis(xKey, yKey, rawX, rawY) {
       const statsX = computeStats(rawX, xKey);
       const statsY = computeStats(rawY, yKey);
-      analysisDiv.innerHTML = `
-        <h3>Data Analysis</h3>
-        <ul>
-          <li><strong>${xSelect.options[xSelect.selectedIndex].text}:</strong> ${xKey==='entry_date'?`From ${statsX.min} to ${statsX.max}`:`Mean ${statsX.mean}, Min ${statsX.min}, Max ${statsX.max}, Median ${statsX.median}`}</li>
-          <li><strong>${ySelect.options[ySelect.selectedIndex].text}:</strong> ${yKey==='entry_date'?`From ${statsY.min} to ${statsY.max}`:`Mean ${statsY.mean}, Min ${statsY.min}, Max ${statsY.max}, Median ${statsY.median}`}</li>
-        </ul>`;
+      let html = `<h3>Data Analysis</h3><ul>`;
+      html += `<li><strong>${xSelect.options[xSelect.selectedIndex].text} (count: ${statsX.count}):</strong> `;
+      html += xKey==='entry_date' ? `From ${statsX.min} to ${statsX.max}` :
+        `Mean ${statsX.mean}, Min ${statsX.min}, Max ${statsX.max}, Median ${statsX.median}, SD ${statsX.stdDev}`;
+      html += `</li>`;
+
+      html += `<li><strong>${ySelect.options[ySelect.selectedIndex].text} (count: ${statsY.count}):</strong> `;
+      html += yKey==='entry_date' ? `From ${statsY.min} to ${statsY.max}` :
+        `Mean ${statsY.mean}, Min ${statsY.min}, Max ${statsY.max}, Median ${statsY.median}, SD ${statsY.stdDev}`;
+      html += `</li>`;
+
+      if (xKey!=='entry_date' && yKey!=='entry_date') {
+        const corr = computeCorrelation(rawX, rawY);
+        html += `<li><strong>Pearson Correlation:</strong> ${corr}</li>`;
+      }
+      html += `</ul>`;
+      analysisDiv.innerHTML = html;
     }
 
     function updateChart() {
@@ -210,9 +248,8 @@
         const yv = cells[mapIndex[yKey]].innerText;
         rawX.push(xv);
         rawY.push(yv);
-        if (xKey === 'entry_date') labels.push(new Date(xv));
-        else labels.push(parseFloat(xv) || 0);
-        dataY.push(parseFloat(yv) || 0);
+        labels.push(xKey==='entry_date'? new Date(xv) : parseFloat(xv)||0);
+        dataY.push(parseFloat(yv)||0);
       });
 
       updateAnalysis(xKey, yKey, rawX, rawY);
