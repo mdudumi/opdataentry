@@ -294,3 +294,34 @@ body.dark-mode .return-button {
     min-width: auto;
   }
 }
+
+/* — Filter controls in header — */
+#previewTable thead tr:nth-child(2) th {
+  padding: 0.25rem 0.5rem;
+}
+
+#previewTable thead tr:nth-child(2) th select,
+#previewTable thead tr:nth-child(2) th input {
+  width: 100%;           /* fill the entire cell */
+  max-width: none;       /* override any calc() inlined styles */
+  box-sizing: border-box;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+}
+
+/* Make the operator dropdown a bit narrower, but the input very wide */
+#previewTable thead tr:nth-child(2) th select {
+  width: 20%;
+  margin-right: 4%;
+}
+
+#previewTable thead tr:nth-child(2) th input {
+  width: 76%;
+}
+
+/* — Totals row shading — */
+#previewTable tbody tr.total-row {
+  background-color: rgba(0, 123, 255, 0.1) !important;
+  color: #000 !important;
+  font-weight: bold;
+}
