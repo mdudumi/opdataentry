@@ -304,7 +304,7 @@ body.dark-mode .return-button {
 /* 2) Increase min-width of each column */
 #previewTable th,
 #previewTable td {
-  min-width: 80px;   /* adjust up or down as you like */
+  min-width: 150px;   /* adjust up or down as you like */
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
