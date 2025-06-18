@@ -1,3 +1,10 @@
+// — Your Supabase credentials —
+const SUPABASE_URL = 'https://nrkakpjugxncfyrgtpfr.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ya2FrcGp1Z3huY2Z5cmd0cGZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAxOTMyNjcsImV4cCI6MjA2NTc2OTI2N30.FzWYbNT792RH6rpxSr9OKlcjMV6qIuVL4oq_W9lsmQs';
+
+// — Initialize the Supabase client —
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
 document.addEventListener('DOMContentLoaded', () => {
   // 1️⃣ Get the email saved in index.html
   const currentEmail = sessionStorage.getItem('userEmail') || 'unknown@example.com';
