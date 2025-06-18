@@ -37,7 +37,6 @@ header {
   display: flex;
   gap: 0.8rem;
   align-items: center;
-  margin-left: auto;
 }
 
 .return-button, #toggleMode {
@@ -113,6 +112,28 @@ form input:focus, form select:focus {
   box-shadow: 0 0 6px #4a90e2aa;
 }
 
+/* Table styling */
+#previewTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+#previewTable th, #previewTable td {
+  border: 1px solid #d1d9e6;
+  padding: 0.6rem;
+  text-align: left;
+}
+
+#previewTable th {
+  background-color: #e9f2fa;
+  color: #333;
+}
+
+#previewTable td {
+  background-color: #ffffff;
+}
+
 /* Dark mode */
 .dark-mode {
   background-color: #121212;
@@ -152,15 +173,8 @@ form input:focus, form select:focus {
 /* Responsive adjustments */
 @media (max-width: 768px) {
   header {
-    flex-direction: column;
-    align-items: flex-start;
+    flex-direction: row;
     padding: 0.8rem 1rem;
-  }
-
-  .header-buttons {
-    margin-top: 0.5rem;
-    justify-content: flex-end;
-    width: 100%;
   }
 
   .container {
