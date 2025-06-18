@@ -15,14 +15,17 @@
     select, button { padding: 0.5rem; font-size: 1rem; }
     canvas { background: #fff; border: 1px solid #ccc; display: block; margin: auto; }
   </style>
+
   <!-- Supabase JS SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
   <!-- Your Supabase credentials -->
   <script>
     const SUPABASE_URL = 'https://nrkakpjugxncfyrgtpfr.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ya2FrcGp1Z3huY2Z5cmd0cGZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAxOTMyNjcsImV4cCI6MjA2NTc2OTI2N30.FzWYbNT792RH6rpxSr9OKlcjMV6qIuVL4oq_W9lsmQs';
+    // Initialize Supabase client
     const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   </script>
 </head>
@@ -31,10 +34,17 @@
     <h1>Chart Builder</h1>
     <button id="backBtn">← Back to Entries</button>
   </header>
+
   <main>
     <div class="controls">
-      <label>X-Axis:<select id="xSelect"></select></label>
-      <label>Y-Axis:<select id="ySelect"></select></label>
+      <label>
+        X-Axis:
+        <select id="xSelect"></select>
+      </label>
+      <label>
+        Y-Axis:
+        <select id="ySelect"></select>
+      </label>
       <button id="updateBtn">Update Chart</button>
     </div>
     <canvas id="chartCanvas" width="800" height="400"></canvas>
@@ -42,21 +52,35 @@
 
   <script>
     (async () => {
-      document.getElementById('backBtn').onclick = () => window.location.href = 'south1.html';
-      // Fetch data from your table
-      // Using embedded supabase client
-      const { data: entries, error } = await supabase.from('south1_entries').select('*');('south1_entries').select('*');
-      if (error) { console.error(error); return; }
-      if (!entries || !entries.length) { alert('No data available'); return; }
+      // Back to entries page
+      document.getElementById('backBtn').onclick = () => {
+        window.location.href = 'south1.html';
+      };
+
+      // Fetch all rows from your table
+      const { data: entries, error } = await supabase
+        .from('south1_entries')
+        .select('*');
+      if (error) {
+        console.error('Fetch error:', error);
+        alert('Error loading data. See console.');
+        return;
+      }
+      if (!entries || !entries.length) {
+        alert('No data available to chart.');
+        return;
+      }
 
       // Sort by entry_date if present
-      if (entries[0].entry_date) entries.sort((a, b) => new Date(a.entry_date) - new Date(b.entry_date));
+      if ('entry_date' in entries[0]) {
+        entries.sort((a, b) => new Date(a.entry_date) - new Date(b.entry_date));
+      }
 
-      // Determine fields
+      // Determine fields & numeric subset
       const fields = Object.keys(entries[0]);
       const numericFields = fields.filter(k => !isNaN(parseFloat(entries[0][k])));
 
-      // Populate selects
+      // Populate dropdowns
       const xSelect = document.getElementById('xSelect');
       const ySelect = document.getElementById('ySelect');
       fields.forEach(f => {
@@ -66,7 +90,7 @@
       xSelect.value = fields.includes('entry_date') ? 'entry_date' : fields[0];
       ySelect.value = numericFields.includes('tub_press') ? 'tub_press' : (numericFields[0] || fields[1]);
 
-      // Chart instance
+      // Chart.js instance
       let chart;
       const ctx = document.getElementById('chartCanvas').getContext('2d');
       function renderChart() {
@@ -74,13 +98,22 @@
         const yKey = ySelect.value;
         const labels = entries.map(r => r[xKey]);
         const data = entries.map(r => {
-          const v = parseFloat(r[yKey]);
-          return isNaN(v) ? null : v;
+          const val = parseFloat(r[yKey]);
+          return isNaN(val) ? null : val;
         });
+
         if (chart) chart.destroy();
         chart = new Chart(ctx, {
           type: 'line',
-          data: { labels, datasets: [{ label: yKey, data, fill: false, tension: 0.1 }] },
+          data: {
+            labels,
+            datasets: [{
+              label: yKey,
+              data,
+              fill: false,
+              tension: 0.1
+            }]
+          },
           options: {
             responsive: true,
             scales: {
@@ -91,7 +124,7 @@
         });
       }
 
-      // Initial render and update handler
+      // Initial draw
       renderChart();
       document.getElementById('updateBtn').onclick = renderChart;
     })();
