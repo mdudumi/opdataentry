@@ -176,6 +176,7 @@
 <script>
   document.addEventListener('DOMContentLoaded', () => {
     // Register Chart.js components and zoom plugin
+    // Register Chart.js components
     Chart.register(
       Chart.LineController,
       Chart.LineElement,
@@ -183,9 +184,9 @@
       Chart.TimeScale,
       Chart.LinearScale,
       Chart.Tooltip,
-      Chart.Legend,
-      Chart.Zoom // plugin
+      Chart.Legend
     );
+    // zoom plugin auto-registers when script is included
 
     const table = document.getElementById('previewTable');
     const xSelect = document.getElementById('xSelect');
