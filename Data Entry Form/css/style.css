@@ -1,347 +1,161 @@
-/* Reset and base */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+/* — RESET & BASE — */
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body { 
+  width:100%; height:100%; 
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+  font-size:14px; line-height:1.5; color:#222; background:#fafafa; 
 }
 
-html, body {
-  height: 100%;
-  width: 100%;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background-color: #fafafa;
-  color: #222;
-  font-size: 14px;
-  line-height: 1.5;
-}
-
-/* Header */
+/* — HEADER — */
 header {
-  position: sticky;
-  top: 0;
-  background: white;
-  padding: 1rem 2rem;
-  box-shadow: 0 2px 6px rgb(0 0 0 / 0.1);
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-weight: 700;
-  font-size: 1.5rem;
-  color: #4a90e2;
-  user-select: none;
+  position:sticky; top:0;
+  display:flex; justify-content:space-between; align-items:center;
+  padding:1rem 2rem; background:#fff;
+  box-shadow:0 2px 6px rgba(0,0,0,.1); z-index:10;
+  font-size:1.5rem; font-weight:700; color:#4a90e2;
+  user-select:none;
 }
-
 .return-button {
-  display: inline-block;
-  background-color: #007bff;
-  color: white;
-  text-decoration: none;
-  padding: 8px 16px;
-  margin: 10px;
-  border-radius: 6px;
-  font-weight: 600;
-  transition: background 0.3s;
+  display:inline-block; margin:10px; padding:.5rem 1rem;
+  background:#007bff; color:#fff; border-radius:6px; text-decoration:none;
+  font-weight:600; transition:.2s;
 }
+.return-button:hover { background:#0056b3; }
 
-.return-button:hover {
-  background-color: #0056b3;
-}
-
-/* Container & layout */
+/* — LAYOUT — */
 .container {
-  display: flex;
-  height: calc(100vh - 72px); /* header height approx 72px */
-  width: 100vw;
-  gap: 1rem;
-  padding: 1rem 2rem;
-  background: #f0f2f5;
+  display:flex; gap:1rem;
+  padding:1rem 2rem; height:calc(100vh - 72px);
+  background:#f0f2f5;
 }
-
-/* Left pane smaller with subtle shadow */
-.left-pane {
-  flex: 0.7;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgb(0 0 0 / 0.05);
-  padding: 1.2rem;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 0.8rem;
-  min-width: 280px;
+.left-pane, .right-pane {
+  background:#fff; border-radius:8px;
+  box-shadow:0 4px 12px rgba(0,0,0,.05);
+  padding:1.2rem; overflow:auto;
 }
+.left-pane { flex:0.7; min-width:280px; }
+.right-pane { flex:1.8; min-width:320px; }
 
-/* Right pane bigger */
-.right-pane {
-  flex: 1.8;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgb(0 0 0 / 0.05);
-  padding: 1.2rem;
-  overflow-x: auto;
-  min-width: 320px;
+/* — FORM — */
+form {
+  display:flex; flex-direction:column; gap:.75rem;
 }
-
-/* Form styling */
 form label {
-  font-weight: 600;
-  margin-bottom: 0.3rem;
-  display: block;
-  color: #444;
-  font-size: 0.9rem;
+  font-size:.9rem; font-weight:600; color:#444;
 }
-
 form input, form select {
-  width: 100%;
-  padding: 0.5rem 0.7rem;
-  border: 1.5px solid #d1d9e6;
-  border-radius: 6px;
-  font-size: 1rem;
-  transition: border-color 0.3s ease;
-  color: #333;
+  width:100%; padding:.5rem .75rem;
+  border:1.5px solid #d1d9e6; border-radius:6px;
+  font-size:1rem; color:#333; transition:.2s;
 }
-
 form input:focus, form select:focus {
-  outline: none;
-  border-color: #4a90e2;
-  box-shadow: 0 0 6px #4a90e2aa;
+  outline:none; border-color:#4a90e2;
+  box-shadow:0 0 6px rgba(74,144,226,.5);
 }
 
+/* — BUTTONS — */
 button {
-  padding: 0.6rem 1.2rem;
-  background: #4a90e2;
-  border: none;
-  border-radius: 6px;
-  color: #fafafa;
-  font-weight: 600;
-  cursor: pointer;
-  font-size: 1rem;
-  transition: background-color 0.25s ease, color 0.25s ease;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  user-select: none;
+  font-family:inherit; font-weight:600; cursor:pointer;
+  padding:.6rem 1.2rem; border:none; border-radius:6px;
+  background:#4a90e2; color:#fafafa; transition:.2s;
+}
+button:hover { background:#357abd; }
+
+/* — TABLE WRAPPER (scrollable) — */
+.table-wrapper {
+  width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch;
 }
 
-button:hover {
-  background: #357abd;
-}
-
-/* Filters bar */
-.filters {
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 1rem;
-  flex-wrap: wrap;
-  align-items: center;
-}
-
-.filters select, .filters button {
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
-  border: 1.5px solid #d1d9e6;
-  background: #599ef8;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: border-color 0.3s ease, color 0.3s ease;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-}
-
-.filters select:hover, .filters button:hover {
-  border-color: #4a90e2;
-}
-
-/* Table styling */
+/* — TABLE — */
 #previewTable {
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0 0.6rem;
-  font-size: 0.9rem;
-  min-width: 600px;
-  table-layout: auto;
-  font-variant-numeric: tabular-nums;
+  width:auto; min-width:100%; border-collapse:separate;
+  border-spacing:0 .6rem; font-size:.9rem; table-layout:auto;
 }
 
 #previewTable th, #previewTable td {
-  background: #f9fafc;
-  padding: 0.6rem 1rem;
-  text-align: left;
-  white-space: nowrap;
-  border: none;
-  border-radius: 6px;
-  color: #333;
-  box-shadow: 0 1px 2px rgb(0 0 0 / 0.05);
+  padding:.6rem 1rem; text-align:left;
+  white-space:nowrap; background:#f9fafc;
+  border:none; border-radius:6px; color:#333;
+  box-shadow:0 1px 2px rgba(0,0,0,.05);
 }
 
 #previewTable th {
-  background: #e1e7f0;
-  font-weight: 700;
-  color: #222;
+  background:#e1e7f0; font-weight:700; color:#222;
 }
 
+/* — HEADER FILTER-ROWS — */
+/* First header row = titles (built by JS) */
+/* Second = operator selects */
+#previewTable thead tr:nth-child(2) th select {
+  width:100%!important; box-sizing:border-box;
+}
+/* Third = value inputs */
+#previewTable thead tr:nth-child(3) th input {
+  width:100%!important; box-sizing:border-box;
+  background:#fff!important; color:#000!important;
+  border:1px solid #ccc!important; border-radius:4px!important;
+  padding:.35rem .5rem!important; font-size:.9rem!important;
+}
+#previewTable thead tr:nth-child(3) th input::placeholder {
+  color:#888!important;
+}
+
+/* — ROW HIGHLIGHTS & INTERACTIVITY — */
 #previewTable td[contenteditable="true"] {
-  cursor: text;
-  transition: background-color 0.2s ease;
+  cursor:text; transition:.2s;
 }
-
 #previewTable td[contenteditable="true"]:focus {
-  outline: 2px solid #4a90e2;
-  background-color: #eaf4ff;
+  outline:2px solid #4a90e2; background:#eaf4ff;
 }
 
-/* Delete button */
+/* — DELETE BUTTON IN TABLE — */
 #previewTable button {
-  background: #ff5f56;
-  border: none;
-  color: white;
-  padding: 0.3rem 0.6rem;
-  border-radius: 5px;
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 0.85rem;
-  transition: background-color 0.3s ease;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  padding:.3rem .6rem; background:#ff5f56; color:#fff;
+  border-radius:5px; font-size:.85rem; transition:.2s;
+}
+#previewTable button:hover { background:#e04b43; }
+
+/* — TOTALS ROW — */
+#previewTable tbody tr.total-row {
+  background:rgba(0,123,255,.15)!important;
+  color:#000!important; font-weight:600;
 }
 
-#previewTable button:hover {
-  background: #e04b43;
-}
-
-/* Dark mode */
+/* — DARK MODE — */
 .dark-mode {
-  background-color: #121212;
-  color: #eee;
+  background:#121212; color:#eee;
 }
-
 .dark-mode header {
-  background-color: #1e1e1e;
-  color: #6ab7ff;
-  box-shadow: 0 2px 6px rgb(255 255 255 / 0.12);
+  background:#1e1e1e; color:#6ab7ff;
+  box-shadow:0 2px 6px rgba(255,255,255,.12);
 }
-
 .dark-mode .left-pane,
 .dark-mode .right-pane {
-  background-color: #1e1e1e;
-  color: #eee;
-  box-shadow: 0 4px 12px rgb(255 255 255 / 0.07);
+  background:#1e1e1e; box-shadow:0 4px 12px rgba(255,255,255,.07);
 }
-
 .dark-mode form label,
 .dark-mode #previewTable th,
-.dark-mode #previewTable td,
-.dark-mode .filters select,
-.dark-mode .filters button {
-  color: #ccc;
-  background-color: #2c2c2c;
-  border-color: #444;
+.dark-mode #previewTable td {
+  color:#ccc; background:#2c2c2c; border-color:#444;
 }
-
-.dark-mode form input:focus, 
-.dark-mode form select:focus,
-.dark-mode .filters select:hover, 
-.dark-mode .filters button:hover {
-  border-color: #599ef8;
-  box-shadow: 0 0 8px #599ef8aa;
+.dark-mode form input:focus,
+.dark-mode form select:focus {
+  border-color:#599ef8; box-shadow:0 0 8px rgba(89,158,248,.5);
 }
-
 .dark-mode #previewTable td[contenteditable="true"]:focus {
-  outline-color: #599ef8;
-  background-color: #335a9d;
+  outline-color:#599ef8; background:#335a9d;
+}
+.dark-mode #previewTable button { background:#e24343; }
+.dark-mode #previewTable button:hover { background:#bf2d2d; }
+.dark-mode button { color:#fff; }
+.dark-mode .return-button {
+  background:#375a7f; color:#fff;
 }
 
-.dark-mode #previewTable button {
-  background: #e24343;
-  color: white;
-}
-
-.dark-mode #previewTable button:hover {
-  background: #bf2d2d;
-}
-
-.dark-mode button {
-  color: white;
-}
-
-body.dark-mode .return-button {
-  background-color: #375a7f;
-  color: #fff;
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-  header {
-    font-size: 1.25rem;
-    padding: 1rem 1rem;
-  }
-  
-  .container {
-    flex-direction: column;
-    height: auto;
-    padding: 1rem 1rem;
-  }
-  
-  .left-pane, .right-pane {
-    flex: none;
-    width: 100%;
-    min-width: auto;
-  }
-  
-  .filters {
-    justify-content: center;
-  }
-
-  #previewTable {
-    font-size: 0.85rem;
-    min-width: auto;
-  }
-}
-
-/* Allow horizontal scrolling */
-.table-wrapper {
-  width: 100%;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-}
-
-/* Restore auto layout so columns size to their content */
-#previewTable {
-  width: auto;       /* allow natural width */
-  min-width: 100%;   /* at least fill the wrapper */
-  table-layout: auto;
-}
-
-/* Let cells wrap if necessary (or you can keep nowrap) */
-#previewTable th,
-#previewTable td {
-  white-space: nowrap;      /* you can try normal if wrapping is OK */
-  overflow: visible;        /* remove the ellipsis */
-  text-overflow: clip;
-}
-
-/* Make filter selects & inputs fill their header cells */
-#previewTable thead tr:nth-of-type(2) th select,
-#previewTable thead tr:nth-of-type(3) th input {
-  width: 100% !important;
-}
-
-/* Totals row shading */
-#previewTable tbody tr.total-row {
-  background-color: rgba(0,123,255,0.15) !important;
-  font-weight: 600;
-  color: #000 !important;
-}
-
-/* Ensure fixed layout so the widths are respected */
-#previewTable {
-  table-layout: fixed;
-  width: 100%;            /* fill its container */
-}
-
-/* Apply the same width to every column header and cell */
-#previewTable th,
-#previewTable td {
-  width: 150px;           /* your desired column width */
-  box-sizing: border-box;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+/* — RESPONSIVE — */
+@media (max-width:768px) {
+  .container { flex-direction:column; height:auto; padding:1rem; }
+  header { font-size:1.25rem; padding:1rem; }
+  .left-pane, .right-pane { width:100%; min-width:auto; }
+  #previewTable { font-size:.85rem; }
 }
