@@ -222,28 +222,6 @@ document.addEventListener('DOMContentLoaded', () => {
       tbody.appendChild(tr);
     });
 
-    // 4) totals row
-    const totals = {};
-    fields.forEach(k => totals[k] = 0);
-    data.forEach(r =>
-      fields.forEach(k => {
-        const n = parseFloat(r[k]);
-        if (!isNaN(n)) totals[k] += n;
-      })
-    );
-    const trT = document.createElement('tr');
-    trT.className = 'total-row';
-    fields.forEach((k, i) => {
-      const td = document.createElement('td');
-      td.textContent = i === 0
-        ? 'Total'
-        : (totals[k] ? totals[k].toFixed(2) : '');
-      trT.appendChild(td);
-    });
-    trT.appendChild(document.createElement('td'));
-    tbody.appendChild(trT);
-  }
-
   // Dark-mode toggle
   toggleBtn?.addEventListener('click', () =>
     document.body.classList.toggle('dark-mode')
