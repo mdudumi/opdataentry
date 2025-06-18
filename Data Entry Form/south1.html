@@ -190,11 +190,91 @@
       fluid_level:6, torque:7, oil_press:8, oil_level:9, frecuenze:10,
       tank_volume:11, free_water:12, bsw_tank:13, tank_temp:14,
       water_diluent:15, diesel_propane:16, chmc:17 };
-    function computeStats(vals,key){const s={};if(key==='entry_date'){const d=vals.map(v=>new Date(v)).filter(d=>!isNaN(d)).sort((a,b)=>a-b);s.min=d[0];s.max=d[d.length-1];s.count=d.length;}else{const n=vals.map(v=>parseFloat(v)).filter(v=>!isNaN(v));s.count=n.length;s.sum=n.reduce((a,b)=>a+b,0);const m=s.sum/s.count;const sq=n.map(v=>Math.pow(v-m,2));s.variance=sq.reduce((a,b)=>a+b,0)/s.count;s.stdDev=Math.sqrt(s.variance);s.mean=m; s.min=Math.min(...n);s.max=Math.max(...n);const sd=n.sort((a,b)=>a-b);s.median=s.count%2?sd[(s.count-1)/2]:(sd[s.count/2-1]+sd[s.count/2])/2;}return s;}
-    function updateAnalysis(xKey,yKey,rawX,rawY){const X=computeStats(rawX,xKey),Y=computeStats(rawY,yKey);let h='<h3>Data Analysis</h3><ul>';h+=`<li><strong>${xSelect.options[xSelect.selectedIndex].text} (count:${X.count}):</strong> ${xKey==='entry_date'?`From ${X.min.toLocaleDateString()} to ${X.max.toLocaleDateString()}`:`Sum ${X.sum.toFixed(2)}, Mean ${X.mean.toFixed(2)}, Min ${X.min.toFixed(2)}, Max ${X.max.toFixed(2)}, Median ${X.median.toFixed(2)}, SD ${X.stdDev.toFixed(2)}`}</li>`;h+=`<li><strong>${ySelect.options[ySelect.selectedIndex].text} (count:${Y.count}):</strong> ${yKey==='entry_date'?`From ${Y.min.toLocaleDateString()} to ${Y.max.toLocaleDateString()}`:`Sum ${Y.sum.toFixed(2)}, Mean ${Y.mean.toFixed(2)}, Min ${Y.min.toFixed(2)}, Max ${Y.max.toFixed(2)}, Median ${Y.median.toFixed(2)}, SD ${Y.stdDev.toFixed(2)}`}</li>`;h+='</ul>';analysisDiv.innerHTML=h;}
-    function updateChart(){const xKey=xSelect.value,yKey=ySelect.value;const rows=Array.from(table.querySelectorAll('tbody tr'));if(!rows.length)return;const labels=[],data=[];const rawX=[],rawY=[];rows.forEach(r=>{const c=r.querySelectorAll('td');const xv=c[mapIndex[xKey]].innerText;const yv=c[mapIndex[yKey]].innerText;const x= xKey==='entry_date'?new Date(xv):parseFloat(xv);const y=parseFloat(yv);if(isNaN(x)||isNaN(y))return;rawX.push(xv);rawY.push(yv);labels.push(x);data.push(y);} );updateAnalysis(xKey,yKey,rawX,rawY);const statsX=computeStats(rawX,xKey),statsY=computeStats(rawY,yKey);if(chart){chart.data.labels=labels;chart.data.datasets=[{label:ySelect.options[ySelect.selectedIndex].text,data:data,fill:false,tension:0.1,pointRadius:3}];chart.options.scales.x.min=statsX.min;chart.options.scales.x.max=statsX.max;chart.options.scales.y.min=statsY.min;chart.options.scales.y.max=statsY.max;chart.update();}else{chart=new Chart(ctx,{type:'line',data:{labels,datasets:[{label:ySelect.options[ySelect.selectedIndex].text,data:data,fill:false,tension:0.1,pointRadius:3}]},options:{responsive:true,scales:{x:{type:xKey==='entry_date'?'time':'linear',time:{unit:'day',displayFormats:{day:'MM/dd/yyyy'}},min:statsX.min,max:statsX.max,title:{display:true,text:xSelect.options[xSelect.selectedIndex].text}},y:{min:statsY.min,max:statsY.max,title:{display:true,text:ySelect.options[ySelect.selectedIndex].text}}},plugins:{zoom:{zoom:{wheel:{enabled:true},pinch:{enabled:true},mode:'xy'},pan:{enabled:true,mode:'xy'}}}}});}} 
-    xSelect.addEventListener('change',updateChart);
-    ySelect.addEventListener('change',updateChart);
+
+    function computeStats(vals,key){
+      const s={};
+      if(key==='entry_date'){
+        const d=vals.map(v=>new Date(v)).filter(d=>!isNaN(d)).sort((a,b)=>a-b);
+        s.min=d[0]; s.max=d[d.length-1]; s.count=d.length;
+      } else {
+        const n=vals.map(v=>parseFloat(v)).filter(v=>!isNaN(v));
+        const count=n.length;
+        const sum=n.reduce((a,b)=>a+b,0);
+        const mean=sum/count;
+        const sq=n.map(v=>Math.pow(v-mean,2));
+        const variance=sq.reduce((a,b)=>a+b,0)/count;
+        s.count=count; s.sum=sum; s.mean=mean; s.min=Math.min(...n);
+        s.max=Math.max(...n); s.median=count%2?n[(count-1)/2]:(n[count/2-1]+n[count/2])/2;
+        s.stdDev=Math.sqrt(variance);
+      }
+      return s;
+    }
+
+    function updateAnalysis(xKey,yKey,rawX,rawY){
+      const X=computeStats(rawX,xKey), Y=computeStats(rawY,yKey);
+      let html='<h3>Data Analysis</h3><ul>';
+      html+=`<li><strong>${xSelect.options[xSelect.selectedIndex].text} (count:${X.count}):</strong> `;
+      html+= xKey==='entry_date'?`From ${X.min.toLocaleDateString()} to ${X.max.toLocaleDateString()}`:
+        `Sum ${X.sum.toFixed(2)}, Mean ${X.mean.toFixed(2)}, Min ${X.min.toFixed(2)}, Max ${X.max.toFixed(2)}, Median ${X.median.toFixed(2)}, SD ${X.stdDev.toFixed(2)}`;
+      html+='</li>';
+      html+=`<li><strong>${ySelect.options[ySelect.selectedIndex].text} (count:${Y.count}):</strong> `;
+      html+= yKey==='entry_date'?`From ${Y.min.toLocaleDateString()} to ${Y.max.toLocaleDateString()}`:
+        `Sum ${Y.sum.toFixed(2)}, Mean ${Y.mean.toFixed(2)}, Min ${Y.min.toFixed(2)}, Max ${Y.max.toFixed(2)}, Median ${Y.median.toFixed(2)}, SD ${Y.stdDev.toFixed(2)}`;
+      html+='</li></ul>';
+      analysisDiv.innerHTML=html;
+    }
+
+    function updateChart(){
+      const xKey=xSelect.value, yKey=ySelect.value;
+      const rows=Array.from(table.querySelectorAll('tbody tr'));
+      if(!rows.length) return;
+
+      // Build array of {x, y}
+      const dataPoints = rows.map(r=>{
+        const c=r.querySelectorAll('td');
+        const xv=c[mapIndex[xKey]].innerText;
+        const yv=c[mapIndex[yKey]].innerText;
+        const xVal = xKey==='entry_date'?new Date(xv):parseFloat(xv);
+        const yVal = parseFloat(yv);
+        if(isNaN(xVal) || isNaN(yVal)) return null;
+        return { x: xKey==='entry_date'? xVal : xVal, y: yVal, rawX: xv, rawY: yv };
+      }).filter(p=>p);
+
+      // Sort by x
+      dataPoints.sort((a,b)=> a.x - b.x);
+
+      // Extract arrays
+      const labels = dataPoints.map(p=> p.x);
+      const dataY = dataPoints.map(p=> p.y);
+      const rawX = dataPoints.map(p=> p.rawX);
+      const rawY = dataPoints.map(p=> p.rawY);
+
+      updateAnalysis(xKey, yKey, rawX, rawY);
+
+      const statsX = computeStats(rawX, xKey);
+      const statsY = computeStats(rawY, yKey);
+
+      const chartData = { labels, datasets: [{ label: ySelect.options[ySelect.selectedIndex].text, data: dataY, fill: false, tension: 0.1, pointRadius: 3 }] };
+      const chartOptions = {
+        responsive: true,
+        scales: {
+          x: { type: xKey==='entry_date'?'time':'linear', time: { unit: 'day', displayFormats: { day: 'MM/dd/yyyy' } }, min: statsX.min, max: statsX.max, title: { display: true, text: xSelect.options[xSelect.selectedIndex].text } },
+          y: { min: statsY.min, max: statsY.max, title: { display: true, text: ySelect.options[ySelect.selectedIndex].text } }
+        },
+        plugins: { zoom: { zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'xy' }, pan: { enabled: true, mode: 'xy' } } }
+      };
+
+      if(chart){
+        chart.data = chartData;
+        chart.options = chartOptions;
+        chart.update();
+      } else {
+        chart = new Chart(ctx, { type: 'line', data: chartData, options: chartOptions });
+      }
+    }
+
+    xSelect.addEventListener('change', updateChart);
+    ySelect.addEventListener('change', updateChart);
     updateChart();
   });
 </script>
