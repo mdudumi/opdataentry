@@ -1,4 +1,4 @@
-// js/script.js
+// js/north1.js
 
 // — Your Supabase credentials —
 const SUPABASE_URL = 'https://nrkakpjugxncfyrgtpfr.supabase.co';
@@ -29,6 +29,8 @@ document.addEventListener('DOMContentLoaded', () => {
   ];
 
   let entries = [];
+  const tableName = 'north1_entries';
+  const channelName = `public:${tableName}`;
 
   // 4️⃣ Pad → Well dropdown
   padSelect?.addEventListener('change', () => {
@@ -43,7 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // 5️⃣ Load existing entries
   async function loadEntries() {
     const { data, error } = await supabaseClient
-      .from('south1_entries')
+      .from(tableName)
       .select('*')
       .order('created_at', { ascending: false });
     if (error) {
@@ -56,16 +58,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 6️⃣ Realtime subscribe (INSERT/UPDATE/DELETE)
   supabaseClient
-    .channel('public:south1_entries')
-    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'south1_entries' },
+    .channel(channelName)
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: tableName },
       ({ new: row }) => { entries.unshift(row); renderTable(); })
-    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'south1_entries' },
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: tableName },
       ({ new: row }) => {
         const i = entries.findIndex(e => e.id === row.id);
         if (i > -1) entries[i] = row;
         renderTable();
       })
-    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'south1_entries' },
+    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: tableName },
       ({ old: row }) => {
         entries = entries.filter(e => e.id !== row.id);
         renderTable();
@@ -83,7 +85,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     const { data, error } = await supabaseClient
-      .from('south1_entries')
+      .from(tableName)
       .insert([payload])
       .select();
 
@@ -147,7 +149,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const newVal = td.textContent.trim() || null;
             if (newVal === entry[key]) return;
             const { error } = await supabaseClient
-              .from('south1_entries')
+              .from(tableName)
               .update({ [key]: newVal })
               .eq('id', entry.id);
             if (error) {
@@ -167,7 +169,7 @@ document.addEventListener('DOMContentLoaded', () => {
           btn.textContent = 'Delete';
           btn.addEventListener('click', async () => {
             const { error } = await supabaseClient
-              .from('south1_entries')
+              .from(tableName)
               .delete()
               .eq('id', entry.id);
             if (error) {
@@ -194,7 +196,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const csv = [header, ...rows].join('\n');
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
-    a.download = 'south1_data.csv';
+    a.download = `${tableName}_data.csv`;
     a.click();
   });
 
