@@ -3,131 +3,112 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Dashboard</title>
+  <title>Data Analysis & Chart</title>
   <style>
     body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
-    header { background: #333; color: #fff; padding: 1rem; display: flex; align-items: center; }
-    header h1 { flex: 1; margin: 0; }
-    header button { background: #555; color: #fff; border: none; padding: 0.5rem 1rem; cursor: pointer; }
+    header { background: #444; color: #fff; padding: 1rem; display: flex; align-items: center; }
+    header h1 { flex: 1; margin: 0; font-size: 1.2rem; }
+    header button { background: #666; color: #fff; border: none; padding: 0.5rem 1rem; cursor: pointer; }
     main { padding: 1rem; }
     .section { margin-bottom: 2rem; }
     .section h2 { margin-top: 0; }
-    canvas { max-width: 100%; height: auto; }
+    canvas { width: 100%; max-width: 800px; height: 400px; }
     .stats-grid { display: flex; flex-wrap: wrap; gap: 1rem; }
-    .stat-card { background: #f7f7f7; padding: 1rem; border: 1px solid #ddd; width: 150px; }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { border: 1px solid #ccc; padding: 0.5rem; text-align: left; }
-    #exportCsv { margin-bottom: 1rem; padding: 0.5rem 1rem; }
+    .stat-card { background: #f0f0f0; padding: 1rem; border: 1px solid #ccc; width: 150px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+    th, td { border: 1px solid #ccc; padding: 0.5rem; font-size: 0.9rem; }
+    #exportCsv { margin-top: 0.5rem; padding: 0.5rem 1rem; }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 </head>
 <body>
   <header>
-    <h1>Data Dashboard</h1>
-    <button id="backBtn">Back to Login</button>
+    <h1>Analysis & Chart</h1>
+    <button id="backBtn">← Back to Entries</button>
   </header>
   <main>
     <div class="section">
-      <h2>Chart</h2>
-      <canvas id="dataChart"></canvas>
+      <h2>Chart - Tubing Pressure Over Time</h2>
+      <canvas id="analysisChart"></canvas>
     </div>
     <div class="section">
       <h2>Summary Statistics</h2>
-      <div id="statsGrid" class="stats-grid"></div>
+      <div id="analysisStats" class="stats-grid"></div>
     </div>
     <div class="section">
-      <h2>Raw Data</h2>
+      <h2>Data Table</h2>
       <button id="exportCsv">Export CSV</button>
-      <div style="overflow-x:auto;">
-        <table id="dataTable">
-          <thead><tr id="tableHead"></tr></thead>
-          <tbody id="tableBody"></tbody>
-        </table>
-      </div>
+      <table>
+        <thead><tr id="analysisHead"></tr></thead>
+        <tbody id="analysisBody"></tbody>
+      </table>
     </div>
   </main>
 
   <script>
     (async () => {
-      // Back button
-      document.getElementById('backBtn').onclick = () => location.href = 'south1.html';
-
-      // Retrieve credentials once
-const SUPABASE_URL = 'https://nrkakpjugxncfyrgtpfr.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ya2FrcGp1Z3huY2Z5cmd0cGZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAxOTMyNjcsImV4cCI6MjA2NTc2OTI2N30.FzWYbNT792RH6rpxSr9OKlcjMV6qIuVL4oq_W9lsmQs';
-
-      if (!supabaseUrl || !supabaseKey) {
-        console.error('Missing Supabase credentials');
-        return location.href = 'south1.html';
+      document.getElementById('backBtn').onclick = () => window.location.href = 'south1.html';
+      // Get credentials from south1.html script globals
+      const SUPABASE_URL = window.SUPABASE_URL || sessionStorage.getItem('supabaseUrl');
+      const SUPABASE_KEY = window.SUPABASE_KEY || sessionStorage.getItem('supabaseKey');
+      if (!SUPABASE_URL || !SUPABASE_KEY) {
+        alert('Missing Supabase credentials. Go back to south1.html and enter your credentials.');
+        return window.location.href = 'south1.html';
       }
-      const supabase = supabase.createClient(supabaseUrl, supabaseKey);
-
+      const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
       try {
-        const { data: entries, error } = await supabase.from('south1-entries').select('*');
+        const { data: rows, error } = await supabase.from('south1_entries').select('*');
         if (error) throw error;
-        if (!entries || !entries.length) {
-          console.warn('No entries found');
+        if (!rows?.length) {
+          document.querySelector('main').innerHTML = '<p>No data to analyze.</p>';
           return;
         }
-
-        // Sort by date
-        entries.sort((a, b) => new Date(a.entry_date) - new Date(b.entry_date));
-
+        // sort by date
+        rows.sort((a, b) => new Date(a.entry_date) - new Date(b.entry_date));
         // Chart
-        const ctx = document.getElementById('dataChart').getContext('2d');
+        const ctx = document.getElementById('analysisChart').getContext('2d');
         new Chart(ctx, {
           type: 'line',
           data: {
-            labels: entries.map(e => e.entry_date),
-            datasets: [{
-              label: 'Tubing Pressure',
-              data: entries.map(e => parseFloat(e.tub_press) || 0),
-              borderColor: 'blue',
-              tension: 0.1
-            }]
+            labels: rows.map(r => r.entry_date),
+            datasets: [{ label: 'Tubing Pressure', data: rows.map(r => parseFloat(r.tub_press) || 0), tension: 0.1 }]
           },
-          options: { responsive: true }
+          options: { responsive: true, scales: { x: { title: { display: true, text: 'Date' } }, y: { title: { display: true, text: 'Pressure' } } } }
         });
-
         // Stats
-        const statsGrid = document.getElementById('statsGrid');
-        const numericKeys = ['tub_press','cas_press','speed','fluid_level','torque','oil_press','oil_level','frecuenze','tank_volume','free_water','bsw_tank','tank_temp','water_diluent','diesel_propane','chmc'];
-        numericKeys.forEach(key => {
-          const vals = entries.map(e => parseFloat(e[key])).filter(n => !isNaN(n));
+        const statsDiv = document.getElementById('analysisStats');
+        const numeric = ['tub_press','cas_press','speed','fluid_level','torque'];
+        numeric.forEach(key => {
+          const vals = rows.map(r => parseFloat(r[key])).filter(n => !isNaN(n));
           if (!vals.length) return;
           const min = Math.min(...vals).toFixed(2);
           const max = Math.max(...vals).toFixed(2);
-          const avg = (vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(2);
-          const card = document.createElement('div');
-          card.className = 'stat-card';
-          card.innerHTML = `<strong>${key}</strong><p>Min: ${min}</p><p>Max: ${max}</p><p>Avg: ${avg}</p>`;
-          statsGrid.appendChild(card);
+          const avg = (vals.reduce((s,n) => s+n,0)/vals.length).toFixed(2);
+          const card = document.createElement('div'); card.className='stat-card';
+          card.innerHTML = `<strong>${key.replace(/_/g,' ')}</strong><p>Min: ${min}</p><p>Max: ${max}</p><p>Avg: ${avg}</p>`;
+          statsDiv.appendChild(card);
         });
-
         // Table
-        const tableHead = document.getElementById('tableHead');
-        Object.keys(entries[0]).forEach(col => {
-          const th = document.createElement('th'); th.textContent = col; tableHead.appendChild(th);
+        const head = document.getElementById('analysisHead');
+        Object.keys(rows[0]).forEach(col => {
+          const th = document.createElement('th'); th.textContent = col.replace(/_/g,' '); head.appendChild(th);
         });
-        const tableBody = document.getElementById('tableBody');
-        entries.forEach(row => {
+        const body = document.getElementById('analysisBody');
+        rows.forEach(r => {
           const tr = document.createElement('tr');
-          Object.values(row).forEach(val => { const td = document.createElement('td'); td.textContent = val; tr.appendChild(td); });
-          tableBody.appendChild(tr);
+          Object.values(r).forEach(v => { const td = document.createElement('td'); td.textContent = v; tr.appendChild(td); });
+          body.appendChild(tr);
         });
-
-        // CSV Export
+        // CSV
         document.getElementById('exportCsv').onclick = () => {
-          const cols = Object.keys(entries[0]);
-          const csv = [cols.join(','), ...entries.map(r => cols.map(c => r[c]).join(','))].join('\n');
-          const blob = new Blob([csv], { type: 'text/csv' });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a'); a.href = url; a.download = 'south1_entries.csv'; a.click(); URL.revokeObjectURL(url);
+          const cols = Object.keys(rows[0]);
+          const csv = [cols.join(','), ...rows.map(r => cols.map(c => r[c]).join(','))].join('\n');
+          const blob = new Blob([csv],{type:'text/csv'}); const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='analysis.csv'; a.click();
         };
-
-      } catch (err) {
-        console.error('Error loading data', err);
+      } catch (e) {
+        console.error(e);
+        document.querySelector('main').innerHTML = `<p>Error: ${e.message}</p>`;
       }
     })();
   </script>
