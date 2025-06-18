@@ -120,48 +120,18 @@
       </table>
 	</div>	    
            <!-- Analysis Section -->
-    <div class="analysis-wrapper" id="analysis">
-      <!-- dynamic stats inserted here -->
-    </div>
+    <div class="analysis-wrapper" id="analysis"></div>
     <!-- Chart Controls -->
     <div class="chart-controls">
       <label for="xSelect">X-Axis:</label>
       <select id="xSelect">
         <option value="entry_date">Entry Date</option>
-        <option value="tub_press">Tubing Pressure</option>
-        <option value="cas_press">Casing Pressure</option>
-        <option value="speed">Speed</option>
-        <option value="fluid_level">Fluid Level</option>
-        <option value="torque">Torque</option>
-        <option value="oil_press">Oil Pressure</option>
-        <option value="oil_level">Oil Level</option>
-        <option value="frecuenze">Frequency</option>
-        <option value="tank_volume">Tank Volume</option>
-        <option value="free_water">Free Water</option>
-        <option value="bsw_tank">BSW Tank</option>
-        <option value="tank_temp">Tank Temperature</option>
-        <option value="water_diluent">Water Diluent</option>
-        <option value="diesel_propane">Diesel Propane</option>
-        <option value="chmc">CHMC</option>
+        <!-- other options -->
       </select>
       <label for="ySelect">Y-Axis:</label>
       <select id="ySelect">
-        <option value="entry_date">Entry Date</option>
         <option value="tub_press">Tubing Pressure</option>
-        <option value="cas_press">Casing Pressure</option>
-        <option value="speed">Speed</option>
-        <option value="fluid_level">Fluid Level</option>
-        <option value="torque">Torque</option>
-        <option value="oil_press">Oil Pressure</option>
-        <option value="oil_level">Oil Level</option>
-        <option value="frecuenze">Frequency</option>
-        <option value="tank_volume">Tank Volume</option>
-        <option value="free_water">Free Water</option>
-        <option value="bsw_tank">BSW Tank</option>
-        <option value="tank_temp">Tank Temperature</option>
-        <option value="water_diluent">Water Diluent</option>
-        <option value="diesel_propane">Diesel Propane</option>
-        <option value="chmc">CHMC</option>
+        <!-- other options -->
       </select>
     </div>
     <div class="chart-wrapper">
@@ -173,10 +143,20 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 <script src="js/south1.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- Date adapter for Chart.js time scale -->
-  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
 <script>
   document.addEventListener('DOMContentLoaded', () => {
+    // Register Chart.js components
+    Chart.register(
+      Chart.LineController,
+      Chart.LineElement,
+      Chart.PointElement,
+      Chart.TimeScale,
+      Chart.LinearScale,
+      Chart.Tooltip,
+      Chart.Legend
+    );
+
     const table = document.getElementById('previewTable');
     const xSelect = document.getElementById('xSelect');
     const ySelect = document.getElementById('ySelect');
@@ -184,12 +164,10 @@
     const ctx = document.getElementById('combinedChart').getContext('2d');
     let chart;
 
-    const mapIndex = {
-      entry_date: 0, pad:1, well:2, tub_press:3, cas_press:4, speed:5,
+    const mapIndex = { entry_date:0, pad:1, well:2, tub_press:3, cas_press:4, speed:5,
       fluid_level:6, torque:7, oil_press:8, oil_level:9, frecuenze:10,
       tank_volume:11, free_water:12, bsw_tank:13, tank_temp:14,
-      water_diluent:15, diesel_propane:16, chmc:17
-    };
+      water_diluent:15, diesel_propane:16, chmc:17 };
 
     function computeStats(values, key) {
       if (key === 'entry_date') {
@@ -202,31 +180,27 @@
       const min = Math.min(...nums).toFixed(2);
       const max = Math.max(...nums).toFixed(2);
       const sorted = nums.slice().sort((a,b)=>a-b);
-      const mid = Math.floor(nums.length/2);
-      const median = (nums.length%2 ? sorted[mid] : ((sorted[mid-1]+sorted[mid])/2)).toFixed(2);
+      const median = nums.length%2 ? sorted[Math.floor(sorted.length/2)] : ((sorted[sorted.length/2-1]+sorted[sorted.length/2])/2).toFixed(2);
       return { mean, min, max, median };
     }
 
     function updateAnalysis(xKey, yKey, rawX, rawY) {
       const statsX = computeStats(rawX, xKey);
       const statsY = computeStats(rawY, yKey);
-      let html = '<h3>Data Analysis</h3><ul>';
-      html += `<li><strong>${xSelect.options[xSelect.selectedIndex].text}:</strong> `;
-      if (xKey === 'entry_date') html += `From ${statsX.min} to ${statsX.max}`;
-      else html += `Mean: ${statsX.mean}, Min: ${statsX.min}, Max: ${statsX.max}, Median: ${statsX.median}`;
-      html += '</li>';
-      html += `<li><strong>${ySelect.options[ySelect.selectedIndex].text}:</strong> `;
-      if (yKey === 'entry_date') html += `From ${statsY.min} to ${statsY.max}`;
-      else html += `Mean: ${statsY.mean}, Min: ${statsY.min}, Max: ${statsY.max}, Median: ${statsY.median}`;
-      html += '</li></ul>';
-      analysisDiv.innerHTML = html;
+      analysisDiv.innerHTML = `
+        <h3>Data Analysis</h3>
+        <ul>
+          <li><strong>${xSelect.options[xSelect.selectedIndex].text}:</strong> ${xKey==='entry_date'?`From ${statsX.min} to ${statsX.max}`:`Mean ${statsX.mean}, Min ${statsX.min}, Max ${statsX.max}, Median ${statsX.median}`}</li>
+          <li><strong>${ySelect.options[ySelect.selectedIndex].text}:</strong> ${yKey==='entry_date'?`From ${statsY.min} to ${statsY.max}`:`Mean ${statsY.mean}, Min ${statsY.min}, Max ${statsY.max}, Median ${statsY.median}`}</li>
+        </ul>`;
     }
 
     function updateChart() {
       const xKey = xSelect.value;
       const yKey = ySelect.value;
       const rows = table.querySelectorAll('tbody tr');
-      const points = [];
+      const labels = [];
+      const dataY = [];
       const rawX = [];
       const rawY = [];
 
@@ -236,29 +210,47 @@
         const yv = cells[mapIndex[yKey]].innerText;
         rawX.push(xv);
         rawY.push(yv);
-        const xVal = xKey === 'entry_date' ? new Date(xv) : parseFloat(xv) || 0;
-        const yVal = yKey === 'entry_date' ? new Date(yv) : parseFloat(yv) || 0;
-        points.push({ x: xVal, y: yVal });
+        if (xKey === 'entry_date') labels.push(new Date(xv));
+        else labels.push(parseFloat(xv) || 0);
+        dataY.push(parseFloat(yv) || 0);
       });
 
       updateAnalysis(xKey, yKey, rawX, rawY);
 
-      const dataset = [{
-        label: `${xSelect.options[xSelect.selectedIndex].text} vs ${ySelect.options[ySelect.selectedIndex].text}`,
-        data: points,
-        showLine: false,
-        pointRadius: 5
-      }];
-
-      const scales = {
-        x: { type: xKey === 'entry_date' ? 'time' : 'linear', title: { display: true, text: xSelect.options[xSelect.selectedIndex].text } },
-        y: { type: yKey === 'entry_date' ? 'time' : 'linear', title: { display: true, text: ySelect.options[ySelect.selectedIndex].text } }
+      const config = {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{
+            label: ySelect.options[ySelect.selectedIndex].text,
+            data: dataY,
+            fill: false,
+            tension: 0.1,
+            pointRadius: 3
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            x: {
+              type: xKey==='entry_date'?'time':'linear',
+              time: { unit: 'day', displayFormats: { day: 'MM/dd/yyyy' } },
+              title: { display: true, text: xSelect.options[xSelect.selectedIndex].text }
+            },
+            y: {
+              title: { display: true, text: ySelect.options[ySelect.selectedIndex].text },
+              beginAtZero: xKey!=='entry_date'
+            }
+          }
+        }
       };
 
-      const config = { type: 'scatter', data: { datasets: dataset }, options: { responsive: true, scales } };
-
-      if (chart) chart.config = config, chart.update();
-      else chart = new Chart(ctx, config);
+      if (chart) {
+        chart.config = config;
+        chart.update();
+      } else {
+        chart = new Chart(ctx, config);
+      }
     }
 
     xSelect.addEventListener('change', updateChart);
