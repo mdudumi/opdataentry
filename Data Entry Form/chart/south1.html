@@ -3,113 +3,112 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Data Analysis & Chart</title>
+  <title>Dynamic Chart Builder</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
-    header { background: #444; color: #fff; padding: 1rem; display: flex; align-items: center; }
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f5f5f5; }
+    header { background: #333; color: #fff; padding: 1rem; display: flex; align-items: center; }
     header h1 { flex: 1; margin: 0; font-size: 1.2rem; }
-    header button { background: #666; color: #fff; border: none; padding: 0.5rem 1rem; cursor: pointer; }
-    main { padding: 1rem; }
-    .section { margin-bottom: 2rem; }
-    .section h2 { margin-top: 0; }
-    canvas { width: 100%; max-width: 800px; height: 400px; }
-    .stats-grid { display: flex; flex-wrap: wrap; gap: 1rem; }
-    .stat-card { background: #f0f0f0; padding: 1rem; border: 1px solid #ccc; width: 150px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
-    th, td { border: 1px solid #ccc; padding: 0.5rem; font-size: 0.9rem; }
-    #exportCsv { margin-top: 0.5rem; padding: 0.5rem 1rem; }
+    header button { background: #555; color: #fff; border: none; padding: 0.5rem 1rem; cursor: pointer; }
+    main { padding: 1rem; max-width: 900px; margin: auto; }
+    .controls { display: flex; gap: 1rem; margin-bottom: 1rem; }
+    .controls label { display: flex; flex-direction: column; font-size: 0.9rem; }
+    select, button { padding: 0.5rem; font-size: 1rem; }
+    canvas { background: #fff; border: 1px solid #ccc; display: block; margin: auto; }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 </head>
 <body>
   <header>
-    <h1>Analysis & Chart</h1>
+    <h1>Chart Builder</h1>
     <button id="backBtn">← Back to Entries</button>
   </header>
   <main>
-    <div class="section">
-      <h2>Chart - Tubing Pressure Over Time</h2>
-      <canvas id="analysisChart"></canvas>
+    <div class="controls">
+      <label>
+        X-Axis:
+        <select id="xSelect"></select>
+      </label>
+      <label>
+        Y-Axis:
+        <select id="ySelect"></select>
+      </label>
+      <button id="updateBtn">Update Chart</button>
     </div>
-    <div class="section">
-      <h2>Summary Statistics</h2>
-      <div id="analysisStats" class="stats-grid"></div>
-    </div>
-    <div class="section">
-      <h2>Data Table</h2>
-      <button id="exportCsv">Export CSV</button>
-      <table>
-        <thead><tr id="analysisHead"></tr></thead>
-        <tbody id="analysisBody"></tbody>
-      </table>
-    </div>
+    <canvas id="chartCanvas" width="800" height="400"></canvas>
   </main>
 
   <script>
     (async () => {
+      // Navigation
       document.getElementById('backBtn').onclick = () => window.location.href = 'south1.html';
-      // Get credentials from south1.html script globals
-      const SUPABASE_URL = window.SUPABASE_URL || sessionStorage.getItem('supabaseUrl');
-      const SUPABASE_KEY = window.SUPABASE_KEY || sessionStorage.getItem('supabaseKey');
-      if (!SUPABASE_URL || !SUPABASE_KEY) {
-        alert('Missing Supabase credentials. Go back to south1.html and enter your credentials.');
+
+      // Credentials
+      const supabaseUrl = sessionStorage.getItem('supabaseUrl');
+      const supabaseKey = sessionStorage.getItem('supabaseKey');
+      if (!supabaseUrl || !supabaseKey) {
+        alert('Missing Supabase credentials.');
         return window.location.href = 'south1.html';
       }
-      const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-      try {
-        const { data: rows, error } = await supabase.from('south1_entries').select('*');
-        if (error) throw error;
-        if (!rows?.length) {
-          document.querySelector('main').innerHTML = '<p>No data to analyze.</p>';
-          return;
-        }
-        // sort by date
-        rows.sort((a, b) => new Date(a.entry_date) - new Date(b.entry_date));
-        // Chart
-        const ctx = document.getElementById('analysisChart').getContext('2d');
-        new Chart(ctx, {
-          type: 'line',
-          data: {
-            labels: rows.map(r => r.entry_date),
-            datasets: [{ label: 'Tubing Pressure', data: rows.map(r => parseFloat(r.tub_press) || 0), tension: 0.1 }]
-          },
-          options: { responsive: true, scales: { x: { title: { display: true, text: 'Date' } }, y: { title: { display: true, text: 'Pressure' } } } }
-        });
-        // Stats
-        const statsDiv = document.getElementById('analysisStats');
-        const numeric = ['tub_press','cas_press','speed','fluid_level','torque'];
-        numeric.forEach(key => {
-          const vals = rows.map(r => parseFloat(r[key])).filter(n => !isNaN(n));
-          if (!vals.length) return;
-          const min = Math.min(...vals).toFixed(2);
-          const max = Math.max(...vals).toFixed(2);
-          const avg = (vals.reduce((s,n) => s+n,0)/vals.length).toFixed(2);
-          const card = document.createElement('div'); card.className='stat-card';
-          card.innerHTML = `<strong>${key.replace(/_/g,' ')}</strong><p>Min: ${min}</p><p>Max: ${max}</p><p>Avg: ${avg}</p>`;
-          statsDiv.appendChild(card);
-        });
-        // Table
-        const head = document.getElementById('analysisHead');
-        Object.keys(rows[0]).forEach(col => {
-          const th = document.createElement('th'); th.textContent = col.replace(/_/g,' '); head.appendChild(th);
-        });
-        const body = document.getElementById('analysisBody');
-        rows.forEach(r => {
-          const tr = document.createElement('tr');
-          Object.values(r).forEach(v => { const td = document.createElement('td'); td.textContent = v; tr.appendChild(td); });
-          body.appendChild(tr);
-        });
-        // CSV
-        document.getElementById('exportCsv').onclick = () => {
-          const cols = Object.keys(rows[0]);
-          const csv = [cols.join(','), ...rows.map(r => cols.map(c => r[c]).join(','))].join('\n');
-          const blob = new Blob([csv],{type:'text/csv'}); const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='analysis.csv'; a.click();
-        };
-      } catch (e) {
-        console.error(e);
-        document.querySelector('main').innerHTML = `<p>Error: ${e.message}</p>`;
+      const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+      // Fetch data
+      const { data: entries, error } = await supabase.from('south1_entries').select('*');
+      if (error || !entries) {
+        console.error(error);
+        return;
       }
+
+      // Sort entries by date if available
+      if (entries[0].entry_date) entries.sort((a,b) => new Date(a.entry_date) - new Date(b.entry_date));
+
+      // Determine fields
+      const fields = Object.keys(entries[0]);
+      // Determine numeric fields for Y-axis default
+      const numericFields = fields.filter(k => !isNaN(parseFloat(entries[0][k])));
+
+      // Populate selectors
+      const xSelect = document.getElementById('xSelect');
+      const ySelect = document.getElementById('ySelect');
+      fields.forEach(f => {
+        const optX = new Option(f, f);
+        const optY = new Option(f, f);
+        xSelect.add(optX);
+        ySelect.add(optY);
+      });
+      xSelect.value = fields.includes('entry_date') ? 'entry_date' : fields[0];
+      ySelect.value = numericFields.includes('tub_press') ? 'tub_press' : (numericFields[0] || fields[1]);
+
+      // Chart instance
+      let chart;
+      function renderChart(xKey, yKey) {
+        const labels = entries.map(r => r[xKey]);
+        const data = entries.map(r => {
+          const v = parseFloat(r[yKey]);
+          return isNaN(v) ? null : v;
+        });
+        if (chart) chart.destroy();
+        const ctx = document.getElementById('chartCanvas').getContext('2d');
+        chart = new Chart(ctx, {
+          type: 'line',
+          data: { labels, datasets: [{ label: yKey, data, fill: false, tension: 0.1 }] },
+          options: {
+            responsive: true,
+            scales: {
+              x: { title: { display: true, text: xKey } },
+              y: { title: { display: true, text: yKey } }
+            }
+          }
+        });
+      }
+
+      // Initial render
+      renderChart(xSelect.value, ySelect.value);
+
+      // Update on button click
+      document.getElementById('updateBtn').onclick = () => {
+        renderChart(xSelect.value, ySelect.value);
+      };
     })();
   </script>
 </body>
