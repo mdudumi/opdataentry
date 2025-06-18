@@ -6,206 +6,179 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 document.addEventListener('DOMContentLoaded', () => {
-  // 1️⃣ Get the email saved in index.html
+  // 1️⃣ Get user’s email from splash screen
   const currentEmail = sessionStorage.getItem('userEmail') || 'unknown@example.com';
 
-  // 2️⃣ Grab DOM nodes
+  // 2️⃣ DOM references
   const form       = document.getElementById('wellForm');
   const padSelect  = document.getElementById('pad');
   const wellSelect = document.getElementById('well');
-  const tableBody  = document.querySelector('#previewTable tbody');
-  const dateFilter = document.getElementById('dateFilter');
-  const padFilter  = document.getElementById('padFilter');
-  const wellFilter = document.getElementById('wellFilter');
+  const table      = document.getElementById('previewTable');
+  const thead      = table.querySelector('thead');
+  const tableBody  = table.querySelector('tbody');
   const toggleBtn  = document.getElementById('toggleMode');
-  const exportBtn  = document.getElementById('exportBtn');
 
-  // 3️⃣ Your form fields
+  // 3️⃣ Data fields
   const fields = [
     'entry_date','pad','well','tub_press','cas_press','speed','fluid_level',
     'torque','oil_press','oil_level','frecuenze','tank_volume','free_water',
     'bsw_tank','tank_temp','water_diluent','diesel_propane','chmc'
   ];
 
-  // 4️⃣ Which table we're working with
-  const tableName = 'north1_entries';
+  // 4️⃣ Table & realtime channel
+  const tableName   = 'north1_entries';
   const channelName = `public:${tableName}`;
 
   let entries = [];
+  let filterValues = {};
+  let sortKey = null, sortDir = 'asc';
 
-  // 5️⃣ Pad → Well dropdown
-  padSelect?.addEventListener('change', () => {
-    wellSelect.innerHTML = '<option value="">-- Select Well --</option>';
-    if (!padSelect.value) return;
-    for (let i = 1; i <= 5; i++) {
-      const name = `${padSelect.value}_Well_${i}`;
-      wellSelect.appendChild(new Option(name, name));
+  // 5️⃣ Build filter row & sorting on headers
+  const headerRow = thead.querySelector('tr');
+  // Attach sort events
+  headerRow.querySelectorAll('th').forEach((th, idx) => {
+    if (idx < fields.length) {
+      const key = fields[idx];
+      th.style.cursor = 'pointer';
+      th.addEventListener('click', () => {
+        if (sortKey === key) sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+        else { sortKey = key; sortDir = 'asc'; }
+        renderTable();
+      });
     }
   });
+  // Insert filter inputs
+  const filterRow = document.createElement('tr');
+  fields.forEach(key => {
+    const th = document.createElement('th');
+    const input = document.createElement('input');
+    input.placeholder = 'Filter';
+    input.dataset.key = key;
+    input.style.width = '80%';
+    input.addEventListener('input', () => {
+      filterValues[key] = input.value;
+      renderTable();
+    });
+    th.appendChild(input);
+    filterRow.appendChild(th);
+  });
+  // empty th for action column
+  filterRow.appendChild(document.createElement('th'));
+  thead.appendChild(filterRow);
 
-  // 6️⃣ Load existing entries
+  // 6️⃣ Load existing rows
   async function loadEntries() {
     const { data, error } = await supabaseClient
       .from(tableName)
       .select('*')
       .order('created_at', { ascending: false });
-    if (error) {
-      console.error('Fetch error:', error);
-      return;
-    }
+    if (error) return console.error('Fetch error:', error);
     entries = data;
     renderTable();
   }
 
-  // 7️⃣ Real-time subscribe (INSERT/UPDATE/DELETE)
+  // 7️⃣ Realtime subscription
   supabaseClient
     .channel(channelName)
-    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: tableName },
-      ({ new: row }) => { entries.unshift(row); renderTable(); })
-    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: tableName },
-      ({ new: row }) => {
-        const idx = entries.findIndex(e => e.id === row.id);
-        if (idx > -1) entries[idx] = row;
-        renderTable();
-      })
-    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: tableName },
-      ({ old: row }) => {
-        entries = entries.filter(e => e.id !== row.id);
-        renderTable();
-      })
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: tableName }, ({ new: r }) => { entries.unshift(r); renderTable(); })
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: tableName }, ({ new: r }) => {
+      const i = entries.findIndex(e => e.id === r.id);
+      if (i > -1) entries[i] = r;
+      renderTable();
+    })
+    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: tableName }, ({ old: r }) => {
+      entries = entries.filter(e => e.id !== r.id);
+      renderTable();
+    })
     .subscribe();
-
   loadEntries();
 
-  // 8️⃣ Handle form submit → INSERT with user_email
-  form?.addEventListener('submit', async e => {
+  // 8️⃣ Form submit → INSERT
+  form.addEventListener('submit', async e => {
     e.preventDefault();
     const payload = { user_email: currentEmail };
-    fields.forEach(f => {
-      payload[f] = form.elements[f]?.value || null;
-    });
+    fields.forEach(f => payload[f] = form.elements[f]?.value || null);
 
     const { data, error } = await supabaseClient
       .from(tableName)
       .insert([payload])
       .select();
-
-    if (error) {
-      console.error('Insert error:', error);
-      return alert(`Insert failed: ${error.message}`);
-    }
-
-    entries.unshift(data[0]);
-    renderTable();
-    form.reset();
+    if (error) return alert(`Insert failed: ${error.message}`);
+    entries.unshift(data[0]); renderTable(); form.reset();
   });
 
-  // 9️⃣ Render table + filters + inline edit + delete
+  // 9️⃣ Render + filter + sort + totals
   function renderTable() {
     tableBody.innerHTML = '';
-    const uniq = key => [...new Set(entries.map(e => e[key]).filter(Boolean))];
-
-    // rebuild filters (preserve selection)
-    if (dateFilter) {
-      const prev = dateFilter.value;
-      dateFilter.innerHTML =
-        `<option value="">All Dates</option>` +
-        uniq('entry_date').map(v => `<option value="${v}">${v}</option>`).join('');
-      dateFilter.value = prev;
-    }
-    if (padFilter) {
-      const prev = padFilter.value;
-      padFilter.innerHTML =
-        `<option value="">All PADs</option>` +
-        uniq('pad').map(v => `<option value="${v}">${v}</option>`).join('');
-      padFilter.value = prev;
-    }
-    if (wellFilter) {
-      const prev = wellFilter.value;
-      wellFilter.innerHTML =
-        `<option value="">All Wells</option>` +
-        uniq('well').map(v => `<option value="${v}">${v}</option>`).join('');
-      wellFilter.value = prev;
-    }
-
-    // read filters
-    const df = dateFilter.value, pf = padFilter.value, wf = wellFilter.value;
-
-    // draw rows
-    entries
-      .filter(e =>
-        (!df || e.entry_date === df) &&
-        (!pf || e.pad        === pf) &&
-        (!wf || e.well       === wf)
-      )
-      .forEach(entry => {
-        const tr = document.createElement('tr');
-
-        // data cells
-        fields.forEach(key => {
-          const td = document.createElement('td');
-          td.textContent = entry[key] ?? '';
-          td.contentEditable = entry.user_email === currentEmail;
-          td.addEventListener('blur', async () => {
-            const newVal = td.textContent.trim() || null;
-            if (newVal === entry[key]) return;
-            const { error } = await supabaseClient
-              .from(tableName)
-              .update({ [key]: newVal })
-              .eq('id', entry.id);
-            if (error) {
-              console.error('Update failed:', error);
-              return alert(`Update failed: ${error.message}`);
-            }
-            entry[key] = newVal;
-            renderTable();
-          });
-          tr.appendChild(td);
-        });
-
-        // action cell (delete only for owner)
-        const tdAction = document.createElement('td');
-        if (entry.user_email === currentEmail) {
-          const btn = document.createElement('button');
-          btn.textContent = 'Delete';
-          btn.addEventListener('click', async () => {
-            const { error } = await supabaseClient
-              .from(tableName)
-              .delete()
-              .eq('id', entry.id);
-            if (error) {
-              console.error('Delete failed:', error);
-              return alert(`Delete failed: ${error.message}`);
-            }
-            entries = entries.filter(e => e.id !== entry.id);
-            renderTable();
-          });
-          tdAction.appendChild(btn);
-        }
-        tr.appendChild(tdAction);
-
-        tableBody.appendChild(tr);
+    let data = [...entries];
+    // apply filtering
+    data = data.filter(e => fields.every(k => {
+      const f = filterValues[k] || '';
+      if (!f) return true;
+      return (e[k] ?? '').toString().toLowerCase().includes(f.toLowerCase());
+    }));
+    // apply sorting
+    if (sortKey) {
+      data.sort((a,b) => {
+        let av = a[sortKey], bv = b[sortKey];
+        const na = parseFloat(av), nb = parseFloat(bv);
+        if (!isNaN(na) && !isNaN(nb)) { av = na; bv = nb; }
+        if (av < bv) return sortDir === 'asc' ? -1 : 1;
+        if (av > bv) return sortDir === 'asc' ? 1 : -1;
+        return 0;
       });
+    }
+    // draw rows
+    data.forEach(entry => {
+      const tr = document.createElement('tr');
+      fields.forEach(key => {
+        const td = document.createElement('td');
+        td.textContent = entry[key] ?? '';
+        td.contentEditable = entry.user_email === currentEmail;
+        td.addEventListener('blur', async () => {
+          const nv = td.textContent.trim() || null;
+          if (nv === entry[key]) return;
+          const { error } = await supabaseClient.from(tableName)
+            .update({ [key]: nv }).eq('id', entry.id);
+          if (error) return alert(`Update failed: ${error.message}`);
+          entry[key] = nv; renderTable();
+        });
+        tr.appendChild(td);
+      });
+      // action cell
+      const act = document.createElement('td');
+      if (entry.user_email === currentEmail) {
+        const btn = document.createElement('button'); btn.textContent = 'Delete';
+        btn.addEventListener('click', async () => {
+          const { error } = await supabaseClient.from(tableName)
+            .delete().eq('id', entry.id);
+          if (error) return alert(`Delete failed: ${error.message}`);
+          entries = entries.filter(e => e.id !== entry.id);
+          renderTable();
+        });
+        act.appendChild(btn);
+      }
+      tr.appendChild(act);
+      tableBody.appendChild(tr);
+    });
+    // totals row
+    const totals = {};
+    fields.forEach(k => totals[k] = 0);
+    data.forEach(e => fields.forEach(k => {
+      const v = parseFloat(e[k]); if (!isNaN(v)) totals[k] += v;
+    }));
+    const trTot = document.createElement('tr'); trTot.classList.add('total-row');
+    fields.forEach((k,i) => {
+      const td = document.createElement('td');
+      td.textContent = i === 0 ? 'Total' : (totals[k] ? totals[k].toFixed(2) : '');
+      trTot.appendChild(td);
+    });
+    trTot.appendChild(document.createElement('td')); // action column
+    tableBody.appendChild(trTot);
   }
 
-  // 🔟 Export CSV
-  exportBtn?.addEventListener('click', () => {
-    const header = ['user_email', ...fields].join(',');
-    const rows = entries.map(e =>
-      [e.user_email, ...fields.map(f => e[f] ?? '')].join(',')
-    );
-    const csv = [header, ...rows].join('\n');
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
-    a.download = `${tableName}_data.csv`;
-    a.click();
+  // 🔟 Dark-mode toggle
+  toggleBtn?.addEventListener('click', () => {
+    document.body.classList.toggle('dark-mode');
   });
-
-  // 🔍 Filters & 🌙 Dark mode toggle
-  [dateFilter, padFilter, wellFilter].forEach(el =>
-    el?.addEventListener('change', renderTable)
-  );
-  toggleBtn?.addEventListener('click', () =>
-    document.body.classList.toggle('dark-mode')
-  );
 });
