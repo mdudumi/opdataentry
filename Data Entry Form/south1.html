@@ -119,19 +119,47 @@
         <tbody></tbody>
       </table>
 	</div>	    
-               <!-- Analysis Section -->
+              <!-- Analysis Section -->
     <div class="analysis-wrapper" id="analysis"></div>
     <!-- Chart Controls -->
     <div class="chart-controls">
       <label for="xSelect">X-Axis:</label>
       <select id="xSelect">
         <option value="entry_date">Entry Date</option>
-        <!-- other options -->
+        <option value="tub_press">Tubing Pressure</option>
+        <option value="cas_press">Casing Pressure</option>
+        <option value="speed">Speed</option>
+        <option value="fluid_level">Fluid Level</option>
+        <option value="torque">Torque</option>
+        <option value="oil_press">Oil Pressure</option>
+        <option value="oil_level">Oil Level</option>
+        <option value="frecuenze">Frequency</option>
+        <option value="tank_volume">Tank Volume</option>
+        <option value="free_water">Free Water</option>
+        <option value="bsw_tank">BSW Tank</option>
+        <option value="tank_temp">Tank Temperature</option>
+        <option value="water_diluent">Water Diluent</option>
+        <option value="diesel_propane">Diesel Propane</option>
+        <option value="chmc">CHMC</option>
       </select>
       <label for="ySelect">Y-Axis:</label>
       <select id="ySelect">
+        <option value="entry_date">Entry Date</option>
         <option value="tub_press">Tubing Pressure</option>
-        <!-- other options -->
+        <option value="cas_press">Casing Pressure</option>
+        <option value="speed">Speed</option>
+        <option value="fluid_level">Fluid Level</option>
+        <option value="torque">Torque</option>
+        <option value="oil_press">Oil Pressure</option>
+        <option value="oil_level">Oil Level</option>
+        <option value="frecuenze">Frequency</option>
+        <option value="tank_volume">Tank Volume</option>
+        <option value="free_water">Free Water</option>
+        <option value="bsw_tank">BSW Tank</option>
+        <option value="tank_temp">Tank Temperature</option>
+        <option value="water_diluent">Water Diluent</option>
+        <option value="diesel_propane">Diesel Propane</option>
+        <option value="chmc">CHMC</option>
       </select>
     </div>
     <div class="chart-wrapper">
@@ -173,8 +201,8 @@
       const stats = {};
       if (key === 'entry_date') {
         const dates = values.map(v => new Date(v)).sort((a,b) => a - b);
-        stats.min = dates[0].toLocaleDateString();
-        stats.max = dates[dates.length-1].toLocaleDateString();
+        stats.min = dates[0]?.toLocaleDateString() || '';
+        stats.max = dates[dates.length-1]?.toLocaleDateString() || '';
         stats.count = dates.length;
       } else {
         const nums = values.map(v => parseFloat(v) || 0);
@@ -203,6 +231,7 @@
       const xs = xVals.map(v => parseFloat(v)||0);
       const ys = yVals.map(v => parseFloat(v)||0);
       const n = xs.length;
+      if(n===0) return 'N/A';
       const meanX = xs.reduce((a,b)=>a+b,0)/n;
       const meanY = ys.reduce((a,b)=>a+b,0)/n;
       const cov = xs.map((x,i)=> (x-meanX)*(ys[i]-meanY)).reduce((a,b)=>a+b,0)/n;
@@ -216,12 +245,12 @@
       const statsY = computeStats(rawY, yKey);
       let html = `<h3>Data Analysis</h3><ul>`;
       html += `<li><strong>${xSelect.options[xSelect.selectedIndex].text} (count: ${statsX.count}):</strong> `;
-      html += xKey==='entry_date' ? `From ${statsX.min} to ${statsX.max}` :
+      html += xKey==='entry_date' ? `From ${statsX.min || '-'} to ${statsX.max || '-'}` :
         `Mean ${statsX.mean}, Min ${statsX.min}, Max ${statsX.max}, Median ${statsX.median}, SD ${statsX.stdDev}`;
       html += `</li>`;
 
       html += `<li><strong>${ySelect.options[ySelect.selectedIndex].text} (count: ${statsY.count}):</strong> `;
-      html += yKey==='entry_date' ? `From ${statsY.min} to ${statsY.max}` :
+      html += yKey==='entry_date' ? `From ${statsY.min || '-'} to ${statsY.max || '-'}` :
         `Mean ${statsY.mean}, Min ${statsY.min}, Max ${statsY.max}, Median ${statsY.median}, SD ${statsY.stdDev}`;
       html += `</li>`;
 
@@ -244,8 +273,8 @@
 
       rows.forEach(row => {
         const cells = row.querySelectorAll('td');
-        const xv = cells[mapIndex[xKey]].innerText;
-        const yv = cells[mapIndex[yKey]].innerText;
+        const xv = cells[mapIndex[xKey]]?.innerText || '';
+        const yv = cells[mapIndex[yKey]]?.innerText || '';
         rawX.push(xv);
         rawY.push(yv);
         labels.push(xKey==='entry_date'? new Date(xv) : parseFloat(xv)||0);
