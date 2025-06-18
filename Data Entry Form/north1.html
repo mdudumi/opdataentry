@@ -119,6 +119,178 @@
         <tbody></tbody>
       </table>
  </div>
+    <div class="analysis-wrapper" id="analysis"></div>
+    <div class="chart-controls">
+      <label for="var2Select">Horizontal (X) Variable:</label>
+      <select id="var2Select">
+        <option value="entry_date">Entry Date</option>
+        <option value="tub_press">Tubing Pressure</option>
+        <option value="cas_press">Casing Pressure</option>
+        <option value="speed">Speed</option>
+        <option value="fluid_level">Fluid Level</option>
+        <option value="torque">Torque</option>
+        <option value="oil_press">Oil Pressure</option>
+        <option value="oil_level">Oil Level</option>
+        <option value="frecuenze">Frequency</option>
+        <option value="tank_volume">Tank Volume</option>
+        <option value="free_water">Free Water</option>
+        <option value="bsw_tank">BSW Tank</option>
+        <option value="tank_temp">Tank Temperature</option>
+        <option value="water_diluent">Water Diluent</option>
+        <option value="diesel_propane">Diesel Propane</option>
+        <option value="chmc">CHMC</option>
+      </select>
+      <label for="var1Select">Primary Vertical (Y) Variable:</label>
+      <select id="var1Select">
+        <option value="tub_press">Tubing Pressure</option>
+        <option value="cas_press">Casing Pressure</option>
+        <option value="speed">Speed</option>
+        <option value="fluid_level">Fluid Level</option>
+        <option value="torque">Torque</option>
+        <option value="oil_press">Oil Pressure</option>
+        <option value="oil_level">Oil Level</option>
+        <option value="frecuenze">Frequency</option>
+        <option value="tank_volume">Tank Volume</option>
+        <option value="free_water">Free Water</option>
+        <option value="bsw_tank">BSW Tank</option>
+        <option value="tank_temp">Tank Temperature</option>
+        <option value="water_diluent">Water Diluent</option>
+        <option value="diesel_propane">Diesel Propane</option>
+        <option value="chmc">CHMC</option>
+      </select>
+      <label for="var3Select">Secondary Vertical (Y2) Variable:</label>
+      <select id="var3Select">
+        <option value="tub_press">Tubing Pressure</option>
+        <option value="cas_press">Casing Pressure</option>
+        <option value="speed">Speed</option>
+        <option value="fluid_level">Fluid Level</option>
+        <option value="torque">Torque</option>
+        <option value="oil_press">Oil Pressure</option>
+        <option value="oil_level">Oil Level</option>
+        <option value="frecuenze">Frequency</option>
+        <option value="tank_volume">Tank Volume</option>
+        <option value="free_water">Free Water</option>
+        <option value="bsw_tank">BSW Tank</option>
+        <option value="tank_temp">Tank Temperature</option>
+        <option value="water_diluent">Water Diluent</option>
+        <option value="diesel_propane">Diesel Propane</option>
+        <option value="chmc">CHMC</option>
+      </select>
+    </div>
+    <div class="chart-wrapper">
+      <canvas id="combinedChart" width="400" height="200"></canvas>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+<script src="js/north1.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    Chart.register(
+      Chart.LineController, Chart.LineElement, Chart.PointElement,
+      Chart.TimeScale, Chart.LinearScale,
+      Chart.Tooltip, Chart.Legend
+    );
+    if (typeof ChartZoom !== 'undefined') Chart.register(ChartZoom);
+
+    const table = document.getElementById('previewTable');
+    const var1 = document.getElementById('var1Select');
+    const var2 = document.getElementById('var2Select');
+    const var3 = document.getElementById('var3Select');
+    const analysisDiv = document.getElementById('analysis');
+    const canvas = document.getElementById('combinedChart');
+    canvas.style.touchAction = 'pan-x pan-y';
+    const ctx = canvas.getContext('2d');
+    let chart;
+
+    const mapIndex = {
+      entry_date:0, pad:1, well:2, tub_press:3, cas_press:4, speed:5,
+      fluid_level:6, torque:7, oil_press:8, oil_level:9, frecuenze:10,
+      tank_volume:11, free_water:12, bsw_tank:13, tank_temp:14,
+      water_diluent:15, diesel_propane:16, chmc:17
+    };
+
+    function computeStats(vals) {
+      const nums = vals.map(v => parseFloat(v)).filter(n => !isNaN(n));
+      const count = nums.length;
+      const min = Math.min(...nums);
+      const max = Math.max(...nums);
+      const sum = nums.reduce((a,b) => a+b,0);
+      const mean = sum/count;
+      const sorted = nums.slice().sort((a,b) => a-b);
+      const median = count%2 ? sorted[(count-1)/2] : (sorted[count/2-1]+sorted[count/2])/2;
+      const variance = nums.map(n => Math.pow(n-mean,2)).reduce((a,b)=>a+b,0)/count;
+      const stdDev = Math.sqrt(variance);
+      return { count, min, max, mean, median, stdDev };
+    }
+
+    function updateAnalysis(xKey,yKey,zKey, rawX, rawY, rawZ) {
+      const A = computeStats(rawY);
+      const B = computeStats(rawZ);
+      analysisDiv.innerHTML = `
+        <h3>Data Analysis</h3>
+        <p><strong>${var1.options[var1.selectedIndex].text}:</strong> count ${A.count}, min ${A.min.toFixed(2)}, max ${A.max.toFixed(2)}, mean ${A.mean.toFixed(2)}, median ${A.median.toFixed(2)}, stdev ${A.stdDev.toFixed(2)}</p>
+        <p><strong>${var3.options[var3.selectedIndex].text}:</strong> count ${B.count}, min ${B.min.toFixed(2)}, max ${B.max.toFixed(2)}, mean ${B.mean.toFixed(2)}, median ${B.median.toFixed(2)}, stdev ${B.stdDev.toFixed(2)}</p>
+      `;
+    }
+
+    function updateChart() {
+      const xKey = var2.value, yKey = var1.value, zKey = var3.value;
+      const rows = Array.from(table.querySelectorAll('tbody tr'));
+      const pts = rows.map(r => {
+        const c = r.querySelectorAll('td');
+        const rawX = c[mapIndex[xKey]].innerText;
+        const rawY = c[mapIndex[yKey]].innerText;
+        const rawZ = c[mapIndex[zKey]].innerText;
+        const x = xKey==='entry_date'? new Date(rawX) : parseFloat(rawX);
+        const y = parseFloat(rawY);
+        const z = parseFloat(rawZ);
+        return (!isNaN(x) && !isNaN(y) && !isNaN(z)) ? { x,y,z, rawY, rawZ } : null;
+      }).filter(p=>p).sort((a,b)=>a.x - b.x);
+
+      const labels = pts.map(p=>p.x);
+      const dataY = pts.map(p=>p.y);
+      const dataZ = pts.map(p=>p.z);
+      const rawY = pts.map(p=>p.rawY);
+      const rawZ = pts.map(p=>p.rawZ);
+
+      updateAnalysis(xKey,yKey,zKey, null, rawY, rawZ);
+      const sY = computeStats(rawY);
+      const sZ = computeStats(rawZ);
+
+      const data = {
+        labels,
+        datasets: [
+          { label: var1.options[var1.selectedIndex].text, data: dataY, yAxisID:'y', fill:false },
+          { label: var3.options[var3.selectedIndex].text, data: dataZ, yAxisID:'y1', fill:false }
+        ]
+      };
+
+      const options = {
+        responsive:true,
+        scales:{
+          x:{ type:xKey==='entry_date'?'time':'linear', time:{ unit:'day', displayFormats:{ day:'MM/dd/yyyy' } } },
+          y:{ position:'left', min:sY.min, max:sY.max },
+          y1:{ position:'right', min:sZ.min, max:sZ.max, grid:{ drawOnChartArea:false } }
+        },
+        plugins:{ zoom:{ zoom:{ wheel:{enabled:true}, pinch:{enabled:true}, mode:'xy' }, pan:{enabled:true,mode:'xy'} } }
+      };
+
+      if(chart){ chart.data=data; chart.options=options; chart.update(); }
+      else { chart=new Chart(ctx,{ type:'line', data, options }); }
+    }
+
+    var1.addEventListener('change', updateChart);
+    var2.addEventListener('change', updateChart);
+    var3.addEventListener('change', updateChart);
+    updateChart();
+  });
+</script>
+	    
     </div>
   </div>
 
