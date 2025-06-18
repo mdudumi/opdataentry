@@ -192,13 +192,16 @@
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
 <script>
   document.addEventListener('DOMContentLoaded', () => {
+    // Register Chart.js components
     Chart.register(
       Chart.LineController, Chart.LineElement, Chart.PointElement,
       Chart.TimeScale, Chart.LinearScale,
-      Chart.Tooltip, Chart.Legend,
-      // explicitly register zoom plugin
-      Chart.Zoom
+      Chart.Tooltip, Chart.Legend
     );
+    // Register zoom plugin (global variable from CDN)
+    if (typeof ChartZoom !== 'undefined') {
+      Chart.register(ChartZoom);
+    }
 
     const table = document.getElementById('previewTable');
     const var1 = document.getElementById('var1Select');
