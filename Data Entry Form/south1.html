@@ -119,60 +119,126 @@
         <tbody></tbody>
       </table>
 	</div>	
-	    <!-- Chart Container -->
-      <div class="chart-wrapper">
-        <canvas id="combinedChart" width="400" height="200"></canvas>
-      </div>
+	      <!-- Chart Controls -->
+    <div class="chart-controls">
+      <label for="var1Select">Variable 1:</label>
+      <select id="var1Select">
+        <option value="tub_press">Tubing Pressure</option>
+        <option value="cas_press">Casing Pressure</option>
+        <option value="speed">Speed</option>
+        <option value="fluid_level">Fluid Level</option>
+        <option value="torque">Torque</option>
+        <option value="oil_press">Oil Pressure</option>
+        <option value="oil_level">Oil Level</option>
+        <option value="frecuenze">Frequency</option>
+        <option value="tank_volume">Tank Volume</option>
+        <option value="free_water">Free Water</option>
+        <option value="bsw_tank">BSW Tank</option>
+        <option value="tank_temp">Tank Temperature</option>
+        <option value="water_diluent">Water Diluent</option>
+        <option value="diesel_propane">Diesel Propane</option>
+        <option value="chmc">CHMC</option>
+      </select>
+      <label for="var2Select">Variable 2:</label>
+      <select id="var2Select">
+        <!-- duplicate options -->
+        <option value="tub_press">Tubing Pressure</option>
+        <option value="cas_press">Casing Pressure</option>
+        <option value="speed">Speed</option>
+        <option value="fluid_level">Fluid Level</option>
+        <option value="torque">Torque</option>
+        <option value="oil_press">Oil Pressure</option>
+        <option value="oil_level">Oil Level</option>
+        <option value="frecuenze">Frequency</option>
+        <option value="tank_volume">Tank Volume</option>
+        <option value="free_water">Free Water</option>
+        <option value="bsw_tank">BSW Tank</option>
+        <option value="tank_temp">Tank Temperature</option>
+        <option value="water_diluent">Water Diluent</option>
+        <option value="diesel_propane">Diesel Propane</option>
+        <option value="chmc">CHMC</option>
+      </select>
+    </div>
+    <div class="chart-wrapper">
+      <canvas id="combinedChart" width="400" height="200"></canvas>
     </div>
   </div>
+</div>
 
-  <!-- existing scripts -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-  <script src="js/south1.js"></script>
-  <!-- Chart.js library -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- Inline chart setup -->
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      // Gather data from the table
-      const rows = document.querySelectorAll('#previewTable tbody tr');
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+<script src="js/south1.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const table = document.getElementById('previewTable');
+    const var1Select = document.getElementById('var1Select');
+    const var2Select = document.getElementById('var2Select');
+    const ctx = document.getElementById('combinedChart').getContext('2d');
+    let chart;
+
+    function getColumnIndex(key) {
+      // map keys to table column index (0-based)
+      const map = {
+        entry_date: 0,
+        pad: 1,
+        well: 2,
+        tub_press: 3,
+        cas_press: 4,
+        speed: 5,
+        fluid_level: 6,
+        torque: 7,
+        oil_press: 8,
+        oil_level: 9,
+        frecuenze: 10,
+        tank_volume: 11,
+        free_water: 12,
+        bsw_tank: 13,
+        tank_temp: 14,
+        water_diluent: 15,
+        diesel_propane: 16,
+        chmc: 17
+      };
+      return map[key];
+    }
+
+    function updateChart() {
+      const var1 = var1Select.value;
+      const var2 = var2Select.value;
+      const rows = table.querySelectorAll('tbody tr');
       const labels = [];
-      const tubPress = [];
-      const casPress = [];
+      const data1 = [];
+      const data2 = [];
       rows.forEach(row => {
         const cells = row.querySelectorAll('td');
-        labels.push(cells[0].innerText); // Entry Date
-        tubPress.push(parseFloat(cells[3].innerText) || 0);
-        casPress.push(parseFloat(cells[4].innerText) || 0);
+        labels.push(cells[0].innerText);
+        data1.push(parseFloat(cells[getColumnIndex(var1)].innerText) || 0);
+        data2.push(parseFloat(cells[getColumnIndex(var2)].innerText) || 0);
       });
-      // Create Chart
-      const ctx = document.getElementById('combinedChart').getContext('2d');
-      new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: labels,
-          datasets: [
-            {
-              label: 'Tubing Pressure',
-              data: tubPress,
-              borderWidth: 1
-            },
-            {
-              label: 'Casing Pressure',
-              data: casPress,
-              borderWidth: 1
-            }
-          ]
-        },
-        options: {
-          responsive: true,
-          scales: {
-            y: { beginAtZero: true }
-          }
-        }
-      });
-    });
-  </script>
+      const datasets = [
+        { label: var1Select.options[var1Select.selectedIndex].text, data: data1, borderWidth: 1 },
+        { label: var2Select.options[var2Select.selectedIndex].text, data: data2, borderWidth: 1 }
+      ];
+
+      if (chart) {
+        chart.data.labels = labels;
+        chart.data.datasets = datasets;
+        chart.update();
+      } else {
+        chart = new Chart(ctx, {
+          type: 'line',
+          data: { labels: labels, datasets: datasets },
+          options: { responsive: true, scales: { y: { beginAtZero: true } } }
+        });
+      }
+    }
+
+    var1Select.addEventListener('change', updateChart);
+    var2Select.addEventListener('change', updateChart);
+
+    // initial render
+    updateChart();
+  });
+</script>
     </div>
   </div>
 
