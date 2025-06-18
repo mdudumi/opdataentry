@@ -295,48 +295,37 @@ body.dark-mode .return-button {
   }
 }
 
-#previewTable {
+/* Allow horizontal scrolling */
+.table-wrapper {
   width: 100%;
-  table-layout: fixed; /* distribute columns equally by default */
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
-/* Remove fixed min-widths so columns size equally */
+/* Restore auto layout so columns size to their content */
+#previewTable {
+  width: auto;       /* allow natural width */
+  min-width: 100%;   /* at least fill the wrapper */
+  table-layout: auto;
+}
+
+/* Let cells wrap if necessary (or you can keep nowrap) */
 #previewTable th,
 #previewTable td {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  /* no min-width, relies on table-layout: fixed */
+  white-space: nowrap;      /* you can try normal if wrapping is OK */
+  overflow: visible;        /* remove the ellipsis */
+  text-overflow: clip;
 }
 
-/* Operator selects fill cell */
-#previewTable thead tr:nth-of-type(2) th select {
-  width: 100% !important;
-  box-sizing: border-box;
-}
-
-/* Value inputs fill cell */
-#previewTable thead tr:nth-of-type(3) th input {
-  width: 100% !important;
-  box-sizing: border-box;
-}
-
-/* Ensure filter controls are styled */
+/* Make filter selects & inputs fill their header cells */
 #previewTable thead tr:nth-of-type(2) th select,
-#previewTable thead tr:nth-of-type(2) th input,
 #previewTable thead tr:nth-of-type(3) th input {
-  background-color: #fff !important;
-  color: #000 !important;
-  border: 1px solid #ccc !important;
-  border-radius: 4px !important;
-  padding: 0.3rem 0.5rem !important;
-  font-size: 0.9rem !important;
+  width: 100% !important;
 }
 
 /* Totals row shading */
 #previewTable tbody tr.total-row {
   background-color: rgba(0,123,255,0.15) !important;
-  color: #000 !important;
   font-weight: 600;
+  color: #000 !important;
 }
-
