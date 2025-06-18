@@ -297,7 +297,7 @@ body.dark-mode .return-button {
 
 /* 1) Fixed layout so columns respect min-width */
 #previewTable {
-  width: 100%;
+  width: 150px;
   table-layout: fixed;
 }
 
@@ -313,7 +313,7 @@ body.dark-mode .return-button {
 /* 3) Make filter controls fill their (now larger) cells */
 #previewTable thead tr:nth-of-type(2) th select,
 #previewTable thead tr:nth-of-type(2) th input {
-  width: 100% !important;
+  width: 80px !important;
 }
 
 /* 4) Ensure the placeholder and text remain legible */
