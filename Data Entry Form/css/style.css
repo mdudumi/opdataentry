@@ -295,33 +295,36 @@ body.dark-mode .return-button {
   }
 }
 
-/* — Filter controls in header — */
-#previewTable thead tr:nth-child(2) th {
+/* 1) Make the filter row’s controls fill the cell */
+/* Target the second row in the THEAD */
+#previewTable thead tr:nth-of-type(2) th {
   padding: 0.25rem 0.5rem;
 }
-
-#previewTable thead tr:nth-child(2) th select,
-#previewTable thead tr:nth-child(2) th input {
-  width: 100%;           /* fill the entire cell */
-  max-width: none;       /* override any calc() inlined styles */
+#previewTable thead tr:nth-of-type(2) th select,
+#previewTable thead tr:nth-of-type(2) th input {
+  width: 100% !important;         /* override inline width */
   box-sizing: border-box;
-  padding: 0.25rem 0.5rem;
+  padding: 0.375rem 0.5rem;       /* a bit more breathing room */
   font-size: 0.875rem;
 }
 
-/* Make the operator dropdown a bit narrower, but the input very wide */
-#previewTable thead tr:nth-child(2) th select {
-  width: 20%;
-  margin-right: 4%;
+/* 2) Now carve out space for the operator dropdown vs. the value input */
+#previewTable thead tr:nth-of-type(2) th select {
+  width: 25% !important;
+  margin-right: 5%;
+}
+#previewTable thead tr:nth-of-type(2) th input {
+  width: 70% !important;
 }
 
-#previewTable thead tr:nth-child(2) th input {
-  width: 76%;
-}
-
-/* — Totals row shading — */
+/* 3) Shade the totals row distinctly */
 #previewTable tbody tr.total-row {
-  background-color: rgba(0, 123, 255, 0.1) !important;
+  background-color: rgba(0, 123, 255, 0.15) !important;
   color: #000 !important;
-  font-weight: bold;
+  font-weight: 600;
+}
+
+/* 4) Optional: fix header cell overflow so select/input don’t wrap */
+#previewTable thead th {
+  white-space: nowrap;
 }
