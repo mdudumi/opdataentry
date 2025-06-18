@@ -175,152 +175,26 @@
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
 <script>
   document.addEventListener('DOMContentLoaded', () => {
-    // Register Chart.js components and zoom plugin
-    // Register Chart.js components
     Chart.register(
-      Chart.LineController,
-      Chart.LineElement,
-      Chart.PointElement,
-      Chart.TimeScale,
-      Chart.LinearScale,
-      Chart.Tooltip,
-      Chart.Legend
+      Chart.LineController, Chart.LineElement, Chart.PointElement,
+      Chart.TimeScale, Chart.LinearScale,
+      Chart.Tooltip, Chart.Legend
     );
-    // zoom plugin auto-registers when script is included
-
     const table = document.getElementById('previewTable');
     const xSelect = document.getElementById('xSelect');
     const ySelect = document.getElementById('ySelect');
     const analysisDiv = document.getElementById('analysis');
     const ctx = document.getElementById('combinedChart').getContext('2d');
     let chart;
-
     const mapIndex = { entry_date:0, pad:1, well:2, tub_press:3, cas_press:4, speed:5,
       fluid_level:6, torque:7, oil_press:8, oil_level:9, frecuenze:10,
       tank_volume:11, free_water:12, bsw_tank:13, tank_temp:14,
       water_diluent:15, diesel_propane:16, chmc:17 };
-
-    function computeStats(values, key) {
-      const stats = {};
-      if (key === 'entry_date') {
-        const dates = values.map(v => v && new Date(v)).filter(d=>d instanceof Date && !isNaN(d)).sort((a,b) => a - b);
-        stats.min = dates[0] || null;
-        stats.max = dates[dates.length-1] || null;
-        stats.count = dates.length;
-      } else {
-        const nums = values.map(v => parseFloat(v)).filter(n=>!isNaN(n));
-        const count = nums.length;
-        const sum = nums.reduce((a,b)=>a+b,0);
-        const mean = sum/count;
-        const squaredDiffs = nums.map(n => Math.pow(n-mean,2));
-        const variance = squaredDiffs.reduce((a,b)=>a+b,0)/count;
-        const stdDev = Math.sqrt(variance);
-        const min = Math.min(...nums);
-        const max = Math.max(...nums);
-        const sorted = nums.slice().sort((a,b)=>a-b);
-        const median = count%2 ? sorted[Math.floor(count/2)] : (sorted[count/2-1]+sorted[count/2])/2;
-        stats.count = count;
-        stats.sum = sum;
-        stats.mean = mean;
-        stats.min = min;
-        stats.max = max;
-        stats.median = median;
-        stats.variance = variance;
-        stats.stdDev = stdDev;
-      }
-      return stats;
-    }
-
-    function computeCorrelation(xVals, yVals) {
-      const xs = xVals.map(v => parseFloat(v)).filter(n=>!isNaN(n));
-      const ys = yVals.map(v => parseFloat(v)).filter(n=>!isNaN(n));
-      const n = Math.min(xs.length, ys.length);
-      if(n===0) return null;
-      const meanX = xs.reduce((a,b)=>a+b,0)/n;
-      const meanY = ys.reduce((a,b)=>a+b,0)/n;
-      const cov = xs.map((x,i)=> (x-meanX)*(ys[i]-meanY)).reduce((a,b)=>a+b,0)/n;
-      const stdX = Math.sqrt(xs.map(x=>Math.pow(x-meanX,2)).reduce((a,b)=>a+b,0)/n);
-      const stdY = Math.sqrt(ys.map(y=>Math.pow(y-meanY,2)).reduce((a,b)=>a+b,0)/n);
-      return stdX && stdY ? cov/(stdX*stdY) : null;
-    }
-
-    function updateAnalysis(xKey, yKey, rawX, rawY) {
-      const statsX = computeStats(rawX, xKey);
-      const statsY = computeStats(rawY, yKey);
-      let html = `<h3>Data Analysis</h3><ul>`;
-      html += `<li><strong>${xSelect.options[xSelect.selectedIndex].text} (count: ${statsX.count}):</strong> `;
-      if(xKey==='entry_date') html += `From ${statsX.min?.toLocaleDateString()} to ${statsX.max?.toLocaleDateString()}`;
-      else html += `Sum ${statsX.sum}, Mean ${statsX.mean.toFixed(2)}, Min ${statsX.min}, Max ${statsX.max}, Median ${statsX.median}, SD ${statsX.stdDev.toFixed(2)}`;
-      html += `</li>`;
-      html += `<li><strong>${ySelect.options[ySelect.selectedIndex].text} (count: ${statsY.count}):</strong> `;
-      if(yKey==='entry_date') html += `From ${statsY.min?.toLocaleDateString()} to ${statsY.max?.toLocaleDateString()}`;
-      else html += `Sum ${statsY.sum}, Mean ${statsY.mean.toFixed(2)}, Min ${statsY.min}, Max ${statsY.max}, Median ${statsY.median}, SD ${statsY.stdDev.toFixed(2)}`;
-      html += `</li>`;
-      if(xKey!=='entry_date' && yKey!=='entry_date') {
-        const corr = computeCorrelation(rawX, rawY)?.toFixed(2);
-        html += `<li><strong>Pearson Correlation:</strong> ${corr}</li>`;
-      }
-      html += `</ul>`;
-      analysisDiv.innerHTML = html;
-    }
-
-    function updateChart() {
-      const xKey = xSelect.value;
-      const yKey = ySelect.value;
-      const rows = table.querySelectorAll('tbody tr');
-      if(!rows.length) return;
-      const labels = [];
-      const dataY = [];
-      const rawX = [];
-      const rawY = [];
-      rows.forEach(row => {
-        const cells = row.querySelectorAll('td');
-        const xvRaw = cells[mapIndex[xKey]]?.innerText || '';
-        const yvRaw = cells[mapIndex[yKey]]?.innerText || '';
-        const xv = xKey==='entry_date' ? new Date(xvRaw) : parseFloat(xvRaw);
-        const yv = parseFloat(yvRaw);
-        if(xKey!=='entry_date' && isNaN(xv)) return;
-        if(isNaN(yv)) return;
-        rawX.push(xvRaw);
-        rawY.push(yvRaw);
-        labels.push(xv);
-        dataY.push(yv);
-      });
-      updateAnalysis(xKey, yKey, rawX, rawY);
-      const statsX = computeStats(rawX, xKey);
-      const statsY = computeStats(rawY, yKey);
-      const config = {
-        type: 'line',
-        data: { labels, datasets:[{ label: ySelect.options[ySelect.selectedIndex].text, data: dataY, fill:false, tension:0.1, pointRadius:3 }] },
-        options: {
-          responsive:true,
-          scales:{
-            x:{
-              type: xKey==='entry_date'?'time':'linear',
-              min: statsX.min,
-              max: statsX.max,
-              time:{ unit:'day', displayFormats:{ day:'MM/dd/yyyy' }},
-              title:{ display:true, text:xSelect.options[xSelect.selectedIndex].text }
-            },
-            y:{
-              min: statsY.min,
-              max: statsY.max,
-              title:{ display:true, text:ySelect.options[ySelect.selectedIndex].text }
-            }
-          },
-          plugins:{
-            zoom:{
-              zoom:{ wheel:{ enabled:true }, pinch:{ enabled:true }, mode:'xy' },
-              pan:{ enabled:true, mode:'xy' }
-            }
-          }
-        }
-      };
-      if(chart) chart.config=config,chart.update(); else chart=new Chart(ctx,config);
-    }
-
-    xSelect.addEventListener('change', updateChart);
-    ySelect.addEventListener('change', updateChart);
+    function computeStats(vals,key){const s={};if(key==='entry_date'){const d=vals.map(v=>new Date(v)).filter(d=>!isNaN(d)).sort((a,b)=>a-b);s.min=d[0];s.max=d[d.length-1];s.count=d.length;}else{const n=vals.map(v=>parseFloat(v)).filter(v=>!isNaN(v));s.count=n.length;s.sum=n.reduce((a,b)=>a+b,0);const m=s.sum/s.count;const sq=n.map(v=>Math.pow(v-m,2));s.variance=sq.reduce((a,b)=>a+b,0)/s.count;s.stdDev=Math.sqrt(s.variance);s.mean=m; s.min=Math.min(...n);s.max=Math.max(...n);const sd=n.sort((a,b)=>a-b);s.median=s.count%2?sd[(s.count-1)/2]:(sd[s.count/2-1]+sd[s.count/2])/2;}return s;}
+    function updateAnalysis(xKey,yKey,rawX,rawY){const X=computeStats(rawX,xKey),Y=computeStats(rawY,yKey);let h='<h3>Data Analysis</h3><ul>';h+=`<li><strong>${xSelect.options[xSelect.selectedIndex].text} (count:${X.count}):</strong> ${xKey==='entry_date'?`From ${X.min.toLocaleDateString()} to ${X.max.toLocaleDateString()}`:`Sum ${X.sum.toFixed(2)}, Mean ${X.mean.toFixed(2)}, Min ${X.min.toFixed(2)}, Max ${X.max.toFixed(2)}, Median ${X.median.toFixed(2)}, SD ${X.stdDev.toFixed(2)}`}</li>`;h+=`<li><strong>${ySelect.options[ySelect.selectedIndex].text} (count:${Y.count}):</strong> ${yKey==='entry_date'?`From ${Y.min.toLocaleDateString()} to ${Y.max.toLocaleDateString()}`:`Sum ${Y.sum.toFixed(2)}, Mean ${Y.mean.toFixed(2)}, Min ${Y.min.toFixed(2)}, Max ${Y.max.toFixed(2)}, Median ${Y.median.toFixed(2)}, SD ${Y.stdDev.toFixed(2)}`}</li>`;h+='</ul>';analysisDiv.innerHTML=h;}
+    function updateChart(){const xKey=xSelect.value,yKey=ySelect.value;const rows=Array.from(table.querySelectorAll('tbody tr'));if(!rows.length)return;const labels=[],data=[];const rawX=[],rawY=[];rows.forEach(r=>{const c=r.querySelectorAll('td');const xv=c[mapIndex[xKey]].innerText;const yv=c[mapIndex[yKey]].innerText;const x= xKey==='entry_date'?new Date(xv):parseFloat(xv);const y=parseFloat(yv);if(isNaN(x)||isNaN(y))return;rawX.push(xv);rawY.push(yv);labels.push(x);data.push(y);} );updateAnalysis(xKey,yKey,rawX,rawY);const statsX=computeStats(rawX,xKey),statsY=computeStats(rawY,yKey);if(chart){chart.data.labels=labels;chart.data.datasets=[{label:ySelect.options[ySelect.selectedIndex].text,data:data,fill:false,tension:0.1,pointRadius:3}];chart.options.scales.x.min=statsX.min;chart.options.scales.x.max=statsX.max;chart.options.scales.y.min=statsY.min;chart.options.scales.y.max=statsY.max;chart.update();}else{chart=new Chart(ctx,{type:'line',data:{labels,datasets:[{label:ySelect.options[ySelect.selectedIndex].text,data:data,fill:false,tension:0.1,pointRadius:3}]},options:{responsive:true,scales:{x:{type:xKey==='entry_date'?'time':'linear',time:{unit:'day',displayFormats:{day:'MM/dd/yyyy'}},min:statsX.min,max:statsX.max,title:{display:true,text:xSelect.options[xSelect.selectedIndex].text}},y:{min:statsY.min,max:statsY.max,title:{display:true,text:ySelect.options[ySelect.selectedIndex].text}}},plugins:{zoom:{zoom:{wheel:{enabled:true},pinch:{enabled:true},mode:'xy'},pan:{enabled:true,mode:'xy'}}}}});}} 
+    xSelect.addEventListener('change',updateChart);
+    ySelect.addEventListener('change',updateChart);
     updateChart();
   });
 </script>
