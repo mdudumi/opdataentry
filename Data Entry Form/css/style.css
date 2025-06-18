@@ -295,35 +295,43 @@ body.dark-mode .return-button {
   }
 }
 
-/* 1) Fixed layout so columns respect min-width */
+/* Make the whole table use fixed layout and fill its container */
 #previewTable {
   width: 100%;
   table-layout: fixed;
 }
 
-/* 2) Increase min-width of each column */
+/* Force every column to be at least 160px wide */
 #previewTable th,
 #previewTable td {
-  min-width: 200px;   /* adjust up or down as you like */
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  min-width: 160px;
 }
 
-/* 3) Make filter controls fill their (now larger) cells */
-#previewTable thead tr:nth-of-type(2) th select,
-#previewTable thead tr:nth-of-type(2) th input {
-  width: 100% !important;
+/* SECOND ROW: operator dropdowns get 30% of the cell */
+#previewTable thead tr:nth-of-type(2) th select {
+  width: 30% !important;
+  box-sizing: border-box;
 }
 
-/* 4) Ensure the placeholder and text remain legible */
-#previewTable thead tr:nth-of-type(2) th input::placeholder {
-  color: #666 !important;
+/* THIRD ROW: value inputs get 65% of the cell */
+#previewTable thead tr:nth-of-type(3) th input {
+  width: 65% !important;
+  box-sizing: border-box;
 }
 
-/* 5) Totals row reaffirm */
-#previewTable tbody tr.total-row {
-  background-color: rgba(0, 123, 255, 0.15) !important;
+/* Ensure our inputs still look crisp */
+#previewTable thead tr:nth-of-type(3) th input {
+  background: #fff !important;
   color: #000 !important;
+  border: 1px solid #ccc !important;
+  border-radius: 4px !important;
+  padding: 0.3rem 0.5rem !important;
+  font-size: 0.9rem !important;
+}
+
+/* Totals row shading (re-affirm) */
+#previewTable tbody tr.total-row {
+  background-color: rgba(0,123,255,0.15) !important;
   font-weight: 600;
+  color: #000 !important;
 }
