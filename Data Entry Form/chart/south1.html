@@ -43,9 +43,9 @@
   <script>
     (async () => {
       document.getElementById('backBtn').onclick = () => window.location.href = 'south1.html';
-
       // Fetch data from your table
-      const { data: entries, error } = await supabase.from('south1_entries').select('*');
+      // Using embedded supabase client
+      const { data: entries, error } = await supabase.from('south1_entries').select('*');('south1_entries').select('*');
       if (error) { console.error(error); return; }
       if (!entries || !entries.length) { alert('No data available'); return; }
 
