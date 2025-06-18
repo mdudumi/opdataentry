@@ -184,6 +184,7 @@
     const table = document.getElementById('previewTable');
     const var1Select = document.getElementById('var1Select'); // Y-axis
     const var2Select = document.getElementById('var2Select'); // X-axis
+    const var3Select = document.getElementById('var3Select'); // Y2-axis
     const analysisDiv = document.getElementById('analysis');
     const ctx = document.getElementById('combinedChart').getContext('2d');
     let chart;
@@ -213,18 +214,16 @@
       return s;
     }
 
-    function updateAnalysis(xKey, yKey, rawX, rawY) {
+    function updateAnalysis(xKey, yKey, zKey, rawX, rawY, rawZ) {
       const X = computeStats(rawX, xKey);
       const Y = computeStats(rawY, yKey);
+      const Z = computeStats(rawZ, zKey);
       let html = '<h3>Data Analysis</h3><ul>';
-      html += `<li><strong>${var2Select.options[var2Select.selectedIndex].text} (count:${X.count}):</strong> ` +
-              (xKey==='entry_date' ? `From ${X.min.toLocaleDateString()} to ${X.max.toLocaleDateString()}` :
-               `Sum ${X.sum.toFixed(2)}, Mean ${X.mean.toFixed(2)}, Min ${X.min.toFixed(2)}, Max ${X.max.toFixed(2)}, Median ${X.median.toFixed(2)}, SD ${X.stdDev.toFixed(2)}`) +
+      html += `<li><strong>${var2Select.options[var2Select.selectedIndex].text}:</strong> count ${X.count}` +
+              (xKey!=='entry_date' ? `, sum ${X.sum.toFixed(2)}, mean ${X.mean.toFixed(2)}` : '') +
               '</li>';
-      html += `<li><strong>${var1Select.options[var1Select.selectedIndex].text} (count:${Y.count}):</strong> ` +
-              (yKey==='entry_date' ? `From ${Y.min.toLocaleDateString()} to ${Y.max.toLocaleDateString()}` :
-               `Sum ${Y.sum.toFixed(2)}, Mean ${Y.mean.toFixed(2)}, Min ${Y.min.toFixed(2)}, Max ${Y.max.toFixed(2)}, Median ${Y.median.toFixed(2)}, SD ${Y.stdDev.toFixed(2)}`) +
-              '</li>';
+      html += `<li><strong>${var1Select.options[var1Select.selectedIndex].text}:</strong> count ${Y.count}, sum ${Y.sum.toFixed(2)}, mean ${Y.mean.toFixed(2)}</li>`;
+      html += `<li><strong>${var3Select.options[var3Select.selectedIndex].text}:</strong> count ${Z.count}, sum ${Z.sum.toFixed(2)}, mean ${Z.mean.toFixed(2)}</li>`;
       html += '</ul>';
       analysisDiv.innerHTML = html;
     }
@@ -232,6 +231,7 @@
     function updateChart() {
       const yKey = var1Select.value;
       const xKey = var2Select.value;
+      const zKey = var3Select.value;
       const rows = Array.from(table.querySelectorAll('tbody tr'));
       if (!rows.length) return;
 
@@ -239,30 +239,43 @@
         const c = r.querySelectorAll('td');
         const rawX = c[mapIndex[xKey]].innerText;
         const rawY = c[mapIndex[yKey]].innerText;
+        const rawZ = c[mapIndex[zKey]].innerText;
         const x = xKey==='entry_date' ? new Date(rawX) : parseFloat(rawX);
-        const y = yKey==='entry_date' ? new Date(rawY) : parseFloat(rawY);
-        if (isNaN(x) || isNaN(y)) return null;
-        return { x, y, rawX, rawY };
+        const y = parseFloat(rawY);
+        const z = parseFloat(rawZ);
+        if (isNaN(x) || isNaN(y) || isNaN(z)) return null;
+        return { x, y, z, rawX, rawY, rawZ };
       }).filter(p => p);
 
       points.sort((a,b) => a.x - b.x);
 
       const labels = points.map(p => p.x);
       const dataY = points.map(p => p.y);
+      const dataZ = points.map(p => p.z);
       const rawX = points.map(p => p.rawX);
       const rawY = points.map(p => p.rawY);
+      const rawZ = points.map(p => p.rawZ);
 
-      updateAnalysis(xKey, yKey, rawX, rawY);
+      updateAnalysis(xKey, yKey, zKey, rawX, rawY, rawZ);
 
       const statsX = computeStats(rawX, xKey);
       const statsY = computeStats(rawY, yKey);
+      const statsZ = computeStats(rawZ, zKey);
 
-      const data = { labels, datasets: [{ label: var1Select.options[var1Select.selectedIndex].text, data: dataY, fill: false, tension: 0.1, pointRadius: 3 }] };
+      const data = {
+        labels,
+        datasets: [
+          { label: var1Select.options[var1Select.selectedIndex].text, data: dataY, yAxisID: 'y', fill: false, tension: 0.1, pointRadius: 3 },
+          { label: var3Select.options[var3Select.selectedIndex].text, data: dataZ, yAxisID: 'y1', fill: false, tension: 0.1, pointRadius: 3 }
+        ]
+      };
+
       const options = {
         responsive: true,
         scales: {
           x: { type: xKey==='entry_date' ? 'time' : 'linear', time: { unit: 'day', displayFormats: { day: 'MM/dd/yyyy' } }, min: statsX.min, max: statsX.max, title: { display: true, text: var2Select.options[var2Select.selectedIndex].text } },
-          y: { min: statsY.min, max: statsY.max, title: { display: true, text: var1Select.options[var1Select.selectedIndex].text } }
+          y: { position: 'left', min: statsY.min, max: statsY.max, title: { display: true, text: var1Select.options[var1Select.selectedIndex].text } },
+          y1: { position: 'right', min: statsZ.min, max: statsZ.max, grid: { drawOnChartArea: false }, title: { display: true, text: var3Select.options[var3Select.selectedIndex].text } }
         },
         plugins: { zoom: { zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'xy' }, pan: { enabled: true, mode: 'xy' } } }
       };
@@ -278,6 +291,7 @@
 
     var1Select.addEventListener('change', updateChart);
     var2Select.addEventListener('change', updateChart);
+    var3Select.addEventListener('change', updateChart);
     updateChart();
   });
 </script>
