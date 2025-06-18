@@ -297,8 +297,7 @@ body.dark-mode .return-button {
 
 /* 1) Fixed layout so columns respect min-width */
 #previewTable {
-  width: 400px;
-  table-layout: fixed;
+  table-layout: auto;
 }
 
 /* 2) Increase min-width of each column */
