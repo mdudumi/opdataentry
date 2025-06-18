@@ -297,14 +297,14 @@ body.dark-mode .return-button {
 
 /* 1) Fixed layout so columns respect min-width */
 #previewTable {
-  width: 150px;
+  width: 400px;
   table-layout: fixed;
 }
 
 /* 2) Increase min-width of each column */
 #previewTable th,
 #previewTable td {
-  min-width: 140px;   /* adjust up or down as you like */
+  min-width: 200px;   /* adjust up or down as you like */
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -313,7 +313,7 @@ body.dark-mode .return-button {
 /* 3) Make filter controls fill their (now larger) cells */
 #previewTable thead tr:nth-of-type(2) th select,
 #previewTable thead tr:nth-of-type(2) th input {
-  width: 80px !important;
+  width: 200px !important;
 }
 
 /* 4) Ensure the placeholder and text remain legible */
