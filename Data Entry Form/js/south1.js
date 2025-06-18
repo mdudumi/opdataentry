@@ -4,252 +4,180 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 
 // — Initialize the Supabase client —
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-document.addEventListener('DOMContentLoaded', () => {
-  const currentEmail = sessionStorage.getItem('userEmail') || 'unknown@example.com';
-  const form       = document.getElementById('wellForm');
-  const padSelect  = document.getElementById('pad');
-  const wellSelect = document.getElementById('well');
-  const table      = document.getElementById('previewTable');
-  const thead      = table.querySelector('thead');
-  const tbody      = table.querySelector('tbody');
-  const toggleBtn  = document.getElementById('toggleMode');
 
-  const fields = [
-    'entry_date','pad','well','tub_press','cas_press','speed','fluid_level',
-    'torque','oil_press','oil_level','frecuenze','tank_volume','free_water',
-    'bsw_tank','tank_temp','water_diluent','diesel_propane','chmc'
-  ];
-  const tableName = 'south1_entries';
-  let entries = [];
-  let filterValues = {};   // { key: { op, val } }
-  let sortKey = null;
-  let sortDir = 'asc';
+// ——————————————————————————
+// 2. State & DOM references
+// ——————————————————————————
+let entries = [];
 
-  // Build the three header rows: titles, operators, values
-  function buildHeader() {
-    thead.innerHTML = '';
+const form        = document.getElementById('wellForm');
+const tableBody   = document.querySelector('#previewTable tbody');
+const padSelect   = document.getElementById('pad');
+const wellSelect  = document.getElementById('well');
+const toggleBtn   = document.getElementById('toggleMode');
 
-    // 1️⃣ Titles with sort
-    const titleRow = document.createElement('tr');
-    fields.forEach(key => {
-      const th = document.createElement('th');
-      th.textContent = key.replace(/_/g,' ').toUpperCase();
-      th.style.cursor = 'pointer';
-      th.addEventListener('click', () => {
-        if (sortKey === key) sortDir = sortDir === 'asc' ? 'desc' : 'asc';
-        else { sortKey = key; sortDir = 'asc'; }
-        renderTable();
-      });
-      titleRow.appendChild(th);
-    });
-    titleRow.appendChild(document.createElement('th')); // action col
-    thead.appendChild(titleRow);
+const xSelect     = document.getElementById('xParam');
+const ySelect     = document.getElementById('yParam');
+const plotBtn     = document.getElementById('renderChart');
+const ctx         = document.getElementById('parameterChart').getContext('2d');
+let chart;  // Chart.js instance
 
-    // 2️⃣ Operator row
-    const opRow = document.createElement('tr');
-    fields.forEach(key => {
-      const th = document.createElement('th');
-      const select = document.createElement('select');
-      ['', '=', 'contains', '<', '<=', '>', '>=', 'between'].forEach(o => {
-        const opt = document.createElement('option');
-        opt.value = o;
-        opt.textContent = o || 'Op';
-        select.appendChild(opt);
-      });
-      select.addEventListener('change', () => {
-        filterValues[key] = filterValues[key] || {};
-        filterValues[key].op = select.value;
-        renderTable();
-      });
-      th.appendChild(select);
-      opRow.appendChild(th);
-    });
-    opRow.appendChild(document.createElement('th'));
-    thead.appendChild(opRow);
+// Ordered list of fields for table & selects
+const numericFields = [
+  'tub_press','cas_press','speed','fluid_level','torque',
+  'oil_press','oil_level','frecuenze','tank_volume',
+  'free_water','bsw_tank','tank_temp','water_diluent',
+  'diesel_propane','chmc'
+];
+const allFields = ['entry_date','pad','well', ...numericFields];
 
-    // 3️⃣ Value row
-    const valRow = document.createElement('tr');
-    fields.forEach(key => {
-      const th = document.createElement('th');
-      const input = document.createElement('input');
-      input.type = 'text';
-      input.placeholder = 'Value';
-      input.addEventListener('input', () => {
-        filterValues[key] = filterValues[key] || {};
-        filterValues[key].val = input.value;
-        renderTable();
-      });
-      th.appendChild(input);
-      valRow.appendChild(th);
-    });
-    valRow.appendChild(document.createElement('th'));
-    thead.appendChild(valRow);
+// ——————————————————————————
+// 3. Load & render entries
+// ——————————————————————————
+async function loadEntries() {
+  const { data, error } = await supabase
+    .from('well_entries')
+    .select('*')
+    .order('entry_date', { ascending: true });
+
+  if (error) {
+    console.error('Error loading entries:', error);
+    return;
   }
+  entries = data;
+  renderTable();
+  populateChartSelectors();
+}
 
-  // Load initial entries
-  async function loadEntries() {
-    const { data, error } = await supabaseClient
-      .from(tableName)
-      .select('*')
-      .order('created_at', { ascending: false });
-    if (error) return console.error('Fetch error:', error);
-    entries = data;
-    renderTable();
-  }
+function renderTable() {
+  tableBody.innerHTML = '';
+  entries.forEach(entry => {
+    const tr = document.createElement('tr');
 
-  // Real-time subscription
-  supabaseClient
-    .channel(`public:${tableName}`)
-    .on('postgres_changes', { event: '*', schema: 'public', table: tableName }, payload => {
-      if (payload.eventType === 'INSERT') entries.unshift(payload.new);
-      if (payload.eventType === 'UPDATE') {
-        const i = entries.findIndex(e => e.id === payload.new.id);
-        if (i > -1) entries[i] = payload.new;
-      }
-      if (payload.eventType === 'DELETE') {
-        entries = entries.filter(e => e.id !== payload.old.id);
-      }
-      renderTable();
-    })
-    .subscribe();
-
-  // Pad → Well cascade
-  padSelect.addEventListener('change', () => {
-    wellSelect.innerHTML = '<option value="">-- Select Well --</option>';
-    if (!padSelect.value) return;
-    for (let i = 1; i <= 5; i++) {
-      wellSelect.appendChild(new Option(
-        `${padSelect.value}_Well_${i}`,
-        `${padSelect.value}_Well_${i}`
-      ));
-    }
-  });
-
-  // Handle new-entry form
-  form.addEventListener('submit', async e => {
-    e.preventDefault();
-    const payload = { user_email: currentEmail };
-    fields.forEach(f => {
-      payload[f] = form.elements[f]?.value || null;
-    });
-    const { data, error } = await supabaseClient
-      .from(tableName)
-      .insert([payload])
-      .select();
-    if (error) {
-      alert(`Insert failed: ${error.message}`);
-      return;
-    }
-    entries.unshift(data[0]);
-    renderTable();
-    form.reset();
-  });
-
-  // Render table: apply filters, sort, then draw rows + totals
-  function renderTable() {
-    tbody.innerHTML = '';
-    let data = [...entries];
-
-    // 1) filtering
-    data = data.filter(row => {
-      return fields.every(key => {
-        const fv = filterValues[key] || {};
-        const op = fv.op, val = fv.val;
-        if (!op || !val) return true;
-        const cell = (row[key] ?? '').toString();
-        const lc = cell.toLowerCase(), v = val.toLowerCase();
-        switch (op) {
-          case '=': return lc === v;
-          case 'contains': return lc.includes(v);
-          case '<': return parseFloat(cell) < parseFloat(val);
-          case '<=': return parseFloat(cell) <= parseFloat(val);
-          case '>': return parseFloat(cell) > parseFloat(val);
-          case '>=': return parseFloat(cell) >= parseFloat(val);
-          case 'between': {
-            const parts = val.split(',').map(x => parseFloat(x.trim()));
-            const n = parseFloat(cell);
-            return parts.length === 2 && n >= parts[0] && n <= parts[1];
-          }
-          default: return true;
-        }
-      });
-    });
-
-    // 2) sorting
-    if (sortKey) {
-      data.sort((a, b) => {
-        let av = a[sortKey], bv = b[sortKey];
-        const na = parseFloat(av), nb = parseFloat(bv);
-        if (!isNaN(na) && !isNaN(nb)) { av = na; bv = nb; }
-        if (av < bv) return sortDir === 'asc' ? -1 : 1;
-        if (av > bv) return sortDir === 'asc' ? 1 : -1;
-        return 0;
-      });
-    }
-
-    // 3) rows
-    data.forEach(entry => {
-      const tr = document.createElement('tr');
-      fields.forEach(key => {
-        const td = document.createElement('td');
-        td.textContent = entry[key] ?? '';
-        td.contentEditable = entry.user_email === currentEmail;
-        td.addEventListener('blur', async () => {
-          const nv = td.textContent.trim() || null;
-          if (nv === entry[key]) return;
-          await supabaseClient
-            .from(tableName)
-            .update({ [key]: nv })
-            .eq('id', entry.id);
-          entry[key] = nv;
-        });
-        tr.appendChild(td);
-      });
-      // action cell
-      const ac = document.createElement('td');
-      if (entry.user_email === currentEmail) {
-        const btn = document.createElement('button');
-        btn.textContent = 'Delete';
-        btn.addEventListener('click', async () => {
-          await supabaseClient
-            .from(tableName)
-            .delete()
-            .eq('id', entry.id);
-        });
-        ac.appendChild(btn);
-      }
-      tr.appendChild(ac);
-      tbody.appendChild(tr);
-    });
-
-    // 4) totals row
-    const totals = {};
-    fields.forEach(k => totals[k] = 0);
-    data.forEach(r =>
-      fields.forEach(k => {
-        const n = parseFloat(r[k]);
-        if (!isNaN(n)) totals[k] += n;
-      })
-    );
-    const trT = document.createElement('tr');
-    trT.className = 'total-row';
-    fields.forEach((k, i) => {
+    allFields.forEach(key => {
       const td = document.createElement('td');
-      td.textContent = i === 0
-        ? 'Total'
-        : (totals[k] ? totals[k].toFixed(2) : '');
-      trT.appendChild(td);
+      td.textContent = entry[key] ?? '';
+      tr.appendChild(td);
     });
-    trT.appendChild(document.createElement('td'));
-    tbody.appendChild(trT);
+
+    // Action cell (delete)
+    const actionTd = document.createElement('td');
+    const delBtn = document.createElement('button');
+    delBtn.textContent = 'Delete';
+    delBtn.addEventListener('click', async () => {
+      await supabase
+        .from('well_entries')
+        .delete()
+        .eq('id', entry.id);
+      await loadEntries();
+    });
+    actionTd.appendChild(delBtn);
+    tr.appendChild(actionTd);
+
+    tableBody.appendChild(tr);
+  });
+}
+
+// ——————————————————————————
+// 4. Form submission (insert)
+// ——————————————————————————
+form.addEventListener('submit', async e => {
+  e.preventDefault();
+
+  // build payload
+  const payload = {
+    entry_date: form.entry_date.value,
+    pad:        form.pad.value,
+    well:       form.well.value,
+  };
+  numericFields.forEach(f => {
+    const val = form[f].value;
+    payload[f] = val === '' ? null : parseFloat(val);
+  });
+
+  const { error } = await supabase
+    .from('well_entries')
+    .insert([payload]);
+
+  if (error) {
+    console.error('Insert error:', error);
+  } else {
+    form.reset();
+    await loadEntries();
   }
+});
 
-  // Dark-mode toggle
-  toggleBtn?.addEventListener('click', () =>
-    document.body.classList.toggle('dark-mode')
-  );
+// ——————————————————————————
+// 5. Pad → Well dynamic dropdown
+// ——————————————————————————
+padSelect.addEventListener('change', () => {
+  const pad = padSelect.value;
+  wellSelect.innerHTML = '<option value="">-- Select Well --</option>';
+  if (pad) {
+    for (let i = 1; i <= 5; i++) {
+      wellSelect.add(new Option(`${pad}_Well_${i}`, `${pad}_Well_${i}`));
+    }
+  }
+});
 
-  // Initialize
-  buildHeader();
+// ——————————————————————————
+// 6. Dark‐mode toggle
+// ——————————————————————————
+toggleBtn.addEventListener('click', () => {
+  document.body.classList.toggle('dark-mode');
+});
+
+// ——————————————————————————
+// 7. Chart.js rendering
+// ——————————————————————————
+function populateChartSelectors() {
+  // populate X selector with all fields
+  xSelect.innerHTML = allFields
+    .map(f => `<option value="${f}">${f.replace(/_/g,' ').toUpperCase()}</option>`)
+    .join('');
+
+  // populate Y selector with only numeric fields
+  ySelect.innerHTML = numericFields
+    .map(f => `<option value="${f}">${f.replace(/_/g,' ').toUpperCase()}</option>`)
+    .join('');
+}
+
+plotBtn.addEventListener('click', () => {
+  const xKey = xSelect.value;
+  const yKey = ySelect.value;
+
+  const labels = entries.map(e => e[xKey]);
+  const data   = entries.map(e => parseFloat(e[yKey]) || 0);
+
+  if (chart) chart.destroy();
+  chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: `${ySelect.selectedOptions[0].text} vs ${xSelect.selectedOptions[0].text}`,
+        data,
+        fill: false,
+        borderWidth: 2,
+      }]
+    },
+    options: {
+      responsive: true,
+      scales: {
+        x: {
+          title: { display: true, text: xSelect.selectedOptions[0].text }
+        },
+        y: {
+          title: { display: true, text: ySelect.selectedOptions[0].text }
+        }
+      }
+    }
+  });
+});
+
+// ——————————————————————————
+// 8. Initialize on page load
+// ——————————————————————————
+document.addEventListener('DOMContentLoaded', () => {
   loadEntries();
 });
