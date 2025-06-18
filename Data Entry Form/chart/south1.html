@@ -15,8 +15,16 @@
     select, button { padding: 0.5rem; font-size: 1rem; }
     canvas { background: #fff; border: 1px solid #ccc; display: block; margin: auto; }
   </style>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Supabase JS SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Your Supabase credentials -->
+  <script>
+    const SUPABASE_URL = 'https://nrkakpjugxncfyrgtpfr.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ya2FrcGp1Z3huY2Z5cmd0cGZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAxOTMyNjcsImV4cCI6MjA2NTc2OTI2N30.FzWYbNT792RH6rpxSr9OKlcjMV6qIuVL4oq_W9lsmQs';
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  </script>
 </head>
 <body>
   <header>
@@ -36,52 +44,56 @@
     (async () => {
       document.getElementById('backBtn').onclick = () => window.location.href = 'south1.html';
 
-      // Try globals first
-      const SUPABASE_URL = window.SUPABASE_URL || sessionStorage.getItem('supabaseUrl');
-      const SUPABASE_KEY = window.SUPABASE_KEY || sessionStorage.getItem('supabaseKey');
-      if (!SUPABASE_URL || !SUPABASE_KEY) {
-        alert('Missing Supabase credentials. Ensure south1.html defines SUPABASE_URL and SUPABASE_KEY or sets sessionStorage.');
-        return window.location.href = 'south1.html';
-      }
-
-      const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      // Fetch data from your table
       const { data: entries, error } = await supabase.from('south1_entries').select('*');
-      if (error || !entries) { console.error(error); return; }
+      if (error) { console.error(error); return; }
+      if (!entries || !entries.length) { alert('No data available'); return; }
 
-      // Sort by entry_date if exists
-      if (entries[0].entry_date) entries.sort((a,b) => new Date(a.entry_date) - new Date(b.entry_date));
+      // Sort by entry_date if present
+      if (entries[0].entry_date) entries.sort((a, b) => new Date(a.entry_date) - new Date(b.entry_date));
 
-      // Fields
+      // Determine fields
       const fields = Object.keys(entries[0]);
       const numericFields = fields.filter(k => !isNaN(parseFloat(entries[0][k])));
 
       // Populate selects
       const xSelect = document.getElementById('xSelect');
       const ySelect = document.getElementById('ySelect');
-      fields.forEach(f => { xSelect.add(new Option(f,f)); ySelect.add(new Option(f,f)); });
+      fields.forEach(f => {
+        xSelect.add(new Option(f, f));
+        ySelect.add(new Option(f, f));
+      });
       xSelect.value = fields.includes('entry_date') ? 'entry_date' : fields[0];
       ySelect.value = numericFields.includes('tub_press') ? 'tub_press' : (numericFields[0] || fields[1]);
 
-      // Chart setup
+      // Chart instance
       let chart;
       const ctx = document.getElementById('chartCanvas').getContext('2d');
-      function updateChart() {
+      function renderChart() {
         const xKey = xSelect.value;
         const yKey = ySelect.value;
-        const labels = entries.map(r=>r[xKey]);
-        const data = entries.map(r=>{ const n=parseFloat(r[yKey]); return isNaN(n)?null:n; });
+        const labels = entries.map(r => r[xKey]);
+        const data = entries.map(r => {
+          const v = parseFloat(r[yKey]);
+          return isNaN(v) ? null : v;
+        });
         if (chart) chart.destroy();
         chart = new Chart(ctx, {
           type: 'line',
-          data: { labels, datasets: [{ label: yKey, data, fill:false, tension:0.1 }] },
-          options: { responsive:true, scales:{ x:{ title:{ display:true, text:xKey } }, y:{ title:{ display:true, text:yKey } } } }
+          data: { labels, datasets: [{ label: yKey, data, fill: false, tension: 0.1 }] },
+          options: {
+            responsive: true,
+            scales: {
+              x: { title: { display: true, text: xKey } },
+              y: { title: { display: true, text: yKey } }
+            }
+          }
         });
       }
 
-      // Initial render
-      updateChart();
-      document.getElementById('updateBtn').onclick = updateChart;
-
+      // Initial render and update handler
+      renderChart();
+      document.getElementById('updateBtn').onclick = renderChart;
     })();
   </script>
 </body>
