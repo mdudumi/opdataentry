@@ -1,11 +1,3 @@
-// js/north1.js
-
-// — Your Supabase credentials —
-const SUPABASE_URL = 'https://nrkakpjugxncfyrgtpfr.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ya2FrcGp1Z3huY2Z5cmd0cGZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAxOTMyNjcsImV4cCI6MjA2NTc2OTI2N30.FzWYbNT792RH6rpxSr9OKlcjMV6qIuVL4oq_W9lsmQs';
-
-// — Initialize the Supabase client —
-const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 document.addEventListener('DOMContentLoaded', () => {
   // 1️⃣ Get the email saved in index.html
   const currentEmail = sessionStorage.getItem('userEmail') || 'unknown@example.com';
@@ -28,11 +20,13 @@ document.addEventListener('DOMContentLoaded', () => {
     'bsw_tank','tank_temp','water_diluent','diesel_propane','chmc'
   ];
 
-  let entries = [];
+  // 4️⃣ Which table we're working with
   const tableName = 'north1_entries';
   const channelName = `public:${tableName}`;
 
-  // 4️⃣ Pad → Well dropdown
+  let entries = [];
+
+  // 5️⃣ Pad → Well dropdown
   padSelect?.addEventListener('change', () => {
     wellSelect.innerHTML = '<option value="">-- Select Well --</option>';
     if (!padSelect.value) return;
@@ -42,7 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // 5️⃣ Load existing entries
+  // 6️⃣ Load existing entries
   async function loadEntries() {
     const { data, error } = await supabaseClient
       .from(tableName)
@@ -56,15 +50,15 @@ document.addEventListener('DOMContentLoaded', () => {
     renderTable();
   }
 
-  // 6️⃣ Realtime subscribe (INSERT/UPDATE/DELETE)
+  // 7️⃣ Real-time subscribe (INSERT/UPDATE/DELETE)
   supabaseClient
     .channel(channelName)
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: tableName },
       ({ new: row }) => { entries.unshift(row); renderTable(); })
     .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: tableName },
       ({ new: row }) => {
-        const i = entries.findIndex(e => e.id === row.id);
-        if (i > -1) entries[i] = row;
+        const idx = entries.findIndex(e => e.id === row.id);
+        if (idx > -1) entries[idx] = row;
         renderTable();
       })
     .on('postgres_changes', { event: 'DELETE', schema: 'public', table: tableName },
@@ -76,7 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   loadEntries();
 
-  // 7️⃣ Handle form submit → INSERT with user_email
+  // 8️⃣ Handle form submit → INSERT with user_email
   form?.addEventListener('submit', async e => {
     e.preventDefault();
     const payload = { user_email: currentEmail };
@@ -99,7 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
     form.reset();
   });
 
-  // 8️⃣ Render table + filters + inline edit + delete
+  // 9️⃣ Render table + filters + inline edit + delete
   function renderTable() {
     tableBody.innerHTML = '';
     const uniq = key => [...new Set(entries.map(e => e[key]).filter(Boolean))];
@@ -144,7 +138,7 @@ document.addEventListener('DOMContentLoaded', () => {
         fields.forEach(key => {
           const td = document.createElement('td');
           td.textContent = entry[key] ?? '';
-          td.contentEditable = entry.user_email === currentEmail; // only owner edits
+          td.contentEditable = entry.user_email === currentEmail;
           td.addEventListener('blur', async () => {
             const newVal = td.textContent.trim() || null;
             if (newVal === entry[key]) return;
@@ -187,7 +181,7 @@ document.addEventListener('DOMContentLoaded', () => {
       });
   }
 
-  // 9️⃣ Export CSV
+  // 🔟 Export CSV
   exportBtn?.addEventListener('click', () => {
     const header = ['user_email', ...fields].join(',');
     const rows = entries.map(e =>
