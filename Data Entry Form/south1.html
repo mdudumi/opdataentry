@@ -118,7 +118,61 @@
         </thead>
         <tbody></tbody>
       </table>
-	</div>	    
+	</div>	
+	    <!-- Chart Container -->
+      <div class="chart-wrapper">
+        <canvas id="combinedChart" width="400" height="200"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- existing scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <script src="js/south1.js"></script>
+  <!-- Chart.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Inline chart setup -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Gather data from the table
+      const rows = document.querySelectorAll('#previewTable tbody tr');
+      const labels = [];
+      const tubPress = [];
+      const casPress = [];
+      rows.forEach(row => {
+        const cells = row.querySelectorAll('td');
+        labels.push(cells[0].innerText); // Entry Date
+        tubPress.push(parseFloat(cells[3].innerText) || 0);
+        casPress.push(parseFloat(cells[4].innerText) || 0);
+      });
+      // Create Chart
+      const ctx = document.getElementById('combinedChart').getContext('2d');
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: 'Tubing Pressure',
+              data: tubPress,
+              borderWidth: 1
+            },
+            {
+              label: 'Casing Pressure',
+              data: casPress,
+              borderWidth: 1
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: { beginAtZero: true }
+          }
+        }
+      });
+    });
+  </script>
     </div>
   </div>
 
