@@ -329,3 +329,19 @@ body.dark-mode .return-button {
   font-weight: 600;
   color: #000 !important;
 }
+
+/* Ensure fixed layout so the widths are respected */
+#previewTable {
+  table-layout: fixed;
+  width: 100%;            /* fill its container */
+}
+
+/* Apply the same width to every column header and cell */
+#previewTable th,
+#previewTable td {
+  width: 120px;           /* your desired column width */
+  box-sizing: border-box;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
