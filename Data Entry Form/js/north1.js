@@ -4,6 +4,7 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 
 // — Initialize the Supabase client —
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
 document.addEventListener('DOMContentLoaded', () => {
   const currentEmail = sessionStorage.getItem('userEmail') || 'unknown@example.com';
   const form       = document.getElementById('wellForm');
@@ -17,12 +18,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const fields = ['entry_date','pad','well','tub_press','cas_press','speed','fluid_level','torque','oil_press','oil_level','frecuenze','tank_volume','free_water','bsw_tank','tank_temp','water_diluent','diesel_propane','chmc'];
   const tableName = 'north1_entries';
   let entries = [];
-  let filterValues = {}; // { key: {op, val} }
+  let filterValues = {};
   let sortKey = null, sortDir = 'asc';
 
   function buildHeader() {
     thead.innerHTML = '';
-    // Sortable headers
     const headerRow = document.createElement('tr');
     fields.forEach(key => {
       const th = document.createElement('th');
@@ -34,10 +34,9 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       headerRow.appendChild(th);
     });
-    headerRow.appendChild(document.createElement('th')); // action column
+    headerRow.appendChild(document.createElement('th'));
     thead.appendChild(headerRow);
 
-    // Filter row with operator and input
     const filterRow = document.createElement('tr');
     fields.forEach(key => {
       const th = document.createElement('th');
@@ -45,14 +44,15 @@ document.addEventListener('DOMContentLoaded', () => {
       ['', '=', 'contains', '<', '<=', '>', '>=', 'between'].forEach(o => {
         const opt = document.createElement('option'); opt.value = o; opt.textContent = o||'Op'; op.appendChild(opt);
       });
-      op.style.width='50px';
+      // Widen operator and input
+      op.style.width='80px';
       op.addEventListener('change', () => {
         filterValues[key] = filterValues[key]||{};
         filterValues[key].op = op.value;
         renderTable();
       });
       const inp = document.createElement('input');
-      inp.type = 'text'; inp.placeholder='Value'; inp.style.width='calc(100% - 55px)'; inp.style.marginLeft='5px';
+      inp.type = 'text'; inp.placeholder='Value'; inp.style.width='calc(100% - 85px)'; inp.style.marginLeft='5px';
       inp.addEventListener('input', () => {
         filterValues[key] = filterValues[key]||{};
         filterValues[key].val = inp.value;
@@ -61,7 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
       th.appendChild(op); th.appendChild(inp);
       filterRow.appendChild(th);
     });
-    filterRow.appendChild(document.createElement('th')); // action col
+    filterRow.appendChild(document.createElement('th'));
     thead.appendChild(filterRow);
   }
 
@@ -103,7 +103,6 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderTable(){
     tbody.innerHTML='';
     let data=[...entries];
-    // filtering
     data=data.filter(row=>fields.every(k=>{
       const fv=filterValues[k]||{}; const op=fv.op,val=fv.val;
       if(!op||!val) return true;
@@ -119,9 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
         default: return true;
       }
     }));
-    // sorting
     if(sortKey) data.sort((a,b)=>{let av=a[sortKey],bv=b[sortKey],na=parseFloat(av),nb=parseFloat(bv);if(!isNaN(na)&&!isNaN(nb)){av=na;bv=nb;}if(av<bv)return sortDir==='asc'?-1:1; if(av>bv)return sortDir==='asc'?1:-1;return 0;});
-    // rows
     data.forEach(entry=>{
       const tr=document.createElement('tr');
       fields.forEach(k=>{
@@ -132,9 +129,9 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       const ac=document.createElement('td'); if(entry.user_email===currentEmail){const btn=document.createElement('button');btn.textContent='Delete';btn.addEventListener('click',async()=>{await supabaseClient.from(tableName).delete().eq('id',entry.id);});ac.appendChild(btn);}tr.appendChild(ac);tbody.appendChild(tr);
     });
-    // totals
     const tot={};fields.forEach(k=>tot[k]=0);data.forEach(r=>fields.forEach(k=>{const n=parseFloat(r[k]); if(!isNaN(n)) tot[k]+=n;}));
-    const trT=document.createElement('tr');trT.className='total-row';fields.forEach((k,i)=>{const td=document.createElement('td');td.textContent=i===0?'Total':(tot[k]?tot[k].toFixed(2):'');trT.appendChild(td);} );trT.appendChild(document.createElement('td'));tbody.appendChild(trT);
+    const trT=document.createElement('tr');trT.className='total-row';trT.style.backgroundColor='#f0f8ff';trT.style.fontWeight='bold';
+    fields.forEach((k,i)=>{const td=document.createElement('td');td.textContent=i===0?'Total':(tot[k]?tot[k].toFixed(2):'');trT.appendChild(td);} );trT.appendChild(document.createElement('td'));tbody.appendChild(trT);
   }
 
   toggleBtn?.addEventListener('click',()=>document.body.classList.toggle('dark-mode'));
