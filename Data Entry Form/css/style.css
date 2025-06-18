@@ -295,33 +295,37 @@ body.dark-mode .return-button {
   }
 }
 
-/* Make the whole table use fixed layout and fill its container */
 #previewTable {
   width: 100%;
-  table-layout: fixed;
+  table-layout: fixed; /* distribute columns equally by default */
 }
 
-/* Force every column to be at least 160px wide */
+/* Remove fixed min-widths so columns size equally */
 #previewTable th,
 #previewTable td {
-  min-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  /* no min-width, relies on table-layout: fixed */
 }
 
-/* SECOND ROW: operator dropdowns get 30% of the cell */
+/* Operator selects fill cell */
 #previewTable thead tr:nth-of-type(2) th select {
-  width: 30% !important;
+  width: 100% !important;
   box-sizing: border-box;
 }
 
-/* THIRD ROW: value inputs get 65% of the cell */
+/* Value inputs fill cell */
 #previewTable thead tr:nth-of-type(3) th input {
-  width: 65% !important;
+  width: 100% !important;
   box-sizing: border-box;
 }
 
-/* Ensure our inputs still look crisp */
+/* Ensure filter controls are styled */
+#previewTable thead tr:nth-of-type(2) th select,
+#previewTable thead tr:nth-of-type(2) th input,
 #previewTable thead tr:nth-of-type(3) th input {
-  background: #fff !important;
+  background-color: #fff !important;
   color: #000 !important;
   border: 1px solid #ccc !important;
   border-radius: 4px !important;
@@ -329,9 +333,10 @@ body.dark-mode .return-button {
   font-size: 0.9rem !important;
 }
 
-/* Totals row shading (re-affirm) */
+/* Totals row shading */
 #previewTable tbody tr.total-row {
   background-color: rgba(0,123,255,0.15) !important;
-  font-weight: 600;
   color: #000 !important;
+  font-weight: 600;
 }
+
