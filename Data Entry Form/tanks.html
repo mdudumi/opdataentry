@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#3751FF" />
+  <title>Entity Tank Configuration</title>
+
+  <!-- global styles -->
+  <link rel="stylesheet" href="css/tanks.css" />
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"
+  />
+  <!-- Supabase UMD client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.js"></script>
+  <!-- your JS -->
+  <script src="js/tanks.js" defer></script>
+</head>
+<body>
+  <div class="card-container full-height">
+    <header class="runsheet-header">
+      <a href="config.html" class="btn small">
+        <i class="fas fa-arrow-left"></i> Back
+      </a>
+      <h2 class="page-title">Entity Tank Configuration</h2>
+    </header>
+
+    <div class="split-container">
+      <!-- Left pane: New Tank form -->
+      <section class="pane form-pane">
+        <form id="etankForm">
+          <div class="form-group">
+            <label for="entitySelect">Entity</label>
+            <select id="entitySelect">
+              <option value="">-- Select Entity --</option>
+            </select>
+            <input type="hidden" id="entityIdInput" name="entity_id" />
+          </div>
+
+          <div class="form-group">
+            <label for="ewellSelect">Well</label>
+            <select id="ewellSelect">
+              <option value="">-- Select Well --</option>
+            </select>
+            <input type="hidden" id="ewellIdInput" name="ewell_id" />
+          </div>
+
+          <div class="form-group">
+            <label for="tankName">Tank Name</label>
+            <input type="text" id="tankName" name="name" placeholder="Enter tank name" />
+          </div>
+
+          <div class="form-group">
+            <label for="tankType">Type</label>
+            <select id="tankType" name="type">
+              <option value="">-- Select Type --</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="comment">Comment</label>
+            <input type="text" id="comment" name="comment" placeholder="Optional notes" />
+          </div>
+
+          <div class="form-group">
+            <label for="startDate">Start Date</label>
+            <input type="date" id="startDate" name="start_date" />
+          </div>
+
+          <div class="form-group">
+            <label for="endDate">End Date</label>
+            <input type="date" id="endDate" name="end_date" />
+          </div>
+
+          <button type="submit" class="btn">Save</button>
+        </form>
+      </section>
+
+      <!-- Right pane: Tanks table -->
+      <section class="pane table-pane">
+        <div class="table-wrapper">
+          <table>
+            <colgroup>
+              <col style="width:150px" />
+              <col style="width:150px" />
+              <col style="width:150px" />
+              <col style="width:150px" />
+              <col style="width:150px" />
+              <col />
+              <col />
+              <col style="width:100px" />
+            </colgroup>
+            <thead>
+              <tr class="title-row">
+                <th>
+                  Entity
+                  <div class="filter-dropdown">
+                    <select id="val-entity_id" class="filter-select">
+                      <option value="">All Entities</option>
+                    </select>
+                  </div>
+                </th>
+                <th>
+                  Well
+                  <div class="filter-dropdown">
+                    <select id="val-ewell_id" class="filter-select">
+                      <option value="">All E-Wells</option>
+                    </select>
+                  </div>
+                </th>
+                <th>
+                  Name
+                  <div class="filter-dropdown">
+                    <select id="op-name" class="filter-select op">
+                      <option value="">Op</option>
+                      <option value="contains">Contains</option>
+                      <option value="=">=</option>
+                    </select>
+                    <input id="val-name" class="filter-input" placeholder="Filter name" />
+                  </div>
+                </th>
+                <th>
+                  Type
+                  <div class="filter-dropdown">
+                    <select id="val-type" class="filter-select">
+                      <option value="">All Types</option>
+                    </select>
+                  </div>
+                </th>
+                <th>
+                  Comment
+                  <div class="filter-dropdown">
+                    <select id="op-comment" class="filter-select op">
+                      <option value="">Op</option>
+                      <option value="contains">Contains</option>
+                      <option value="=">=</option>
+                    </select>
+                    <input id="val-comment" class="filter-input" placeholder="Filter comment" />
+                  </div>
+                </th>
+                <th>
+                  Start Date
+                  <div class="filter-dropdown">
+                    <select id="op-start_date" class="filter-select op">
+                      <option value="">Op</option>
+                      <option value="=">=</option>
+                      <option value="<">&lt;</option>
+                      <option value=">">&gt;</option>
+                      <option value="between">Between</option>
+                    </select>
+                    <div class="date-filters">
+                      <input id="val-start_date-1" type="date" class="date-filter" />
+                      <input id="val-start_date-2" type="date" class="date-filter" />
+                    </div>
+                  </div>
+                </th>
+                <th>
+                  End Date
+                  <div class="filter-dropdown">
+                    <select id="op-end_date" class="filter-select op">
+                      <option value="">Op</option>
+                      <option value="=">=</option>
+                      <option value="<">&lt;</option>
+                      <option value=">">&gt;</option>
+                      <option value="between">Between</option>
+                    </select>
+                    <div class="date-filters">
+                      <input id="val-end_date-1" type="date" class="date-filter" />
+                      <input id="val-end_date-2" type="date" class="date-filter" />
+                    </div>
+                  </div>
+                </th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- populated by js/tanks.js -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </div>
+</body>
+</html>

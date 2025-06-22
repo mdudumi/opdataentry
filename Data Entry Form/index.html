@@ -3,49 +3,81 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Select Your Zone • OPDES v.1.0</title>
+  <title>Dashboard Modules</title>
+
+  <!-- Inter font -->
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <!-- FontAwesome for icons -->
+  <link
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    rel="stylesheet"
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"
+  />
+
+  <!-- Custom CSS -->
   <link rel="stylesheet" href="css/index.css" />
+
+  <!-- Supabase client (required for login flow) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.min.js"></script>
+  <script src="js/index.js" defer></script>
 </head>
 <body>
-  <div class="card">
-    <h1>Welcome to OPDES v.1.0</h1>
-    <p>Select your route zone and sign in to continue</p>
-    <form id="loginForm">
-      <div>
-        <label for="routeZone">Route Zone</label>
-        <select id="routeZone" name="routeZone" required>
-          <option value="" disabled selected>— pick a zone —</option>
-          <option value="south1">South 1</option>
-          <option value="north1">North 1</option>
-          <option value="central1">Central 1</option>
-        </select>
-      </div>
-      <div>
-        <label for="zonePassword">Zone Password</label>
-        <input
-          id="zonePassword"
-          name="zonePassword"
-          type="password"
-          required
-          placeholder="Enter zone password"
-        />
-      </div>
-      <div>
-        <label for="userEmail">Email</label>
-        <input
-          id="userEmail"
-          name="userEmail"
-          type="email"
-          required
-          placeholder="you@example.com"
-        />
-      </div>
-      <div class="error" id="errorMsg"></div>
-      <button type="submit">Continue</button>
-    </form>
-  </div>
+<header class="dashboard-header">
+    <div class="header-content">
+      <h1>OPDES v.1.0</h1>
+      <p class="header-subtitle">Welcome back! Select a module to get started.</p>
+    </div>
+  </header>
 
-  <script src="js/index.js" defer></script>
+  <main class="modules-container">
+    <div class="module-card" data-module="Configuration" tabindex="0">
+      <i class="fas fa-sliders-h fa-2x"></i>
+      <h2>Configuration</h2>
+      <p>Manage global settings and dropdown definitions.</p>
+    </div>
+
+    <div class="module-card" data-module="Production" tabindex="0">
+      <i class="fas fa-water fa-2x"></i>
+      <h2>Production</h2>
+      <p>Configure well parameters, tank levels, and chemical,diesel and propane usage and operational status.</p>
+    </div>
+
+    <div class="module-card" data-module="Workover" tabindex="0">
+      <i class="fas fa-oil-can fa-2x"></i>
+      <h2>Well Servicing</h2>
+      <p>Set up well services, look at schematics, analyze workovers and equipment.</p>
+    </div>
+
+    <div class="module-card" data-module="Pumps" tabindex="0">
+      <i class="fas fa-layer-group fa-2x"></i>
+      <h2>Pumps</h2>
+      <p>Define pump runlifes, mounted and demounted entries, and pump pull out an run in analysis.</p>
+    </div>
+  </main>
+
+  <!-- Login Modal (hidden until triggered) -->
+  <div class="modal-backdrop" id="loginModal">
+    <div class="modal-card">
+      <h2>Login for <span id="modalModuleName"></span></h2>
+      <div id="loginError" class="error"></div>
+      <div class="form-group">
+        <label for="loginEmail">Email</label>
+        <input type="email" id="loginEmail" placeholder="you@example.com" />
+      </div>
+      <div class="form-group">
+        <label for="loginPassword">Password</label>
+        <input type="password" id="loginPassword" placeholder="••••••••" />
+      </div>
+      <div class="modal-actions">
+        <button id="loginCancel" class="btn secondary">Cancel</button>
+        <button id="loginSubmit" class="btn primary">Login</button>
+      </div>
+    </div>
+  </div>
 </body>
 </html>
-

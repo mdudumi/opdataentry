@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dropdowns Admin</title>
+
+  <!-- FontAwesome for the back icon -->
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"
+  />
+
+  <!-- Your professional CSS -->
+  <link rel="stylesheet" href="css/dropdowns.css" />
+
+  <!-- Supabase UMD client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.min.js"></script>
+  <!-- Your CRUD logic -->
+  <script src="js/dropdowns.js" defer></script>
+</head>
+
+<body>
+  <!-- Header -->
+  <header class="runsheet-header">
+    <a href="config.html" class="home-btn">
+      <i class="fas fa-arrow-left"></i> Back
+    </a>
+    <div class="container">
+      <h2 class="page-title">Dropdowns Configuration</h2>
+      <div class="spacer"></div>
+    </div>
+  </header>
+
+  <!-- Main content -->
+  <div class="container">
+    <h1>Manage Dropdowns</h1>
+    <div id="status" class="status"></div>
+
+    <!-- Add controls row -->
+    <div class="main-split">
+      <section class="pane form-pane">
+        <label for="new-eroot-val">Root</label>
+        <input id="new-eroot-val" placeholder="New root…" />
+        <button id="add-eroot">Add Root</button>
+      </section>
+
+      <section class="pane form-pane">
+        <label for="new-etype-val">Type</label>
+        <input id="new-etype-val" placeholder="New type…" />
+        <button id="add-etype">Add Type</button>
+      </section>
+
+      <section class="pane form-pane">
+        <label for="new-earea-val">Area</label>
+        <input id="new-earea-val" placeholder="New area…" />
+        <button id="add-earea">Add Area</button>
+      </section>
+
+      <section class="pane form-pane">
+        <label for="new-emethod-val">Methodology</label>
+        <input id="new-emethod-val" placeholder="New method…" />
+        <button id="add-emethod">Add Method</button>
+      </section>
+
+      <section class="pane form-pane">
+        <label for="new-ewtype-val">Well Type</label>
+        <input id="new-ewtype-val" placeholder="New well type…" />
+        <button id="add-ewtype">Add WType</button>
+      </section>
+    </div>
+
+    <!-- First pair of tables -->
+    <div class="main-split">
+      <section class="pane table-pane">
+        <h2>Root Values</h2>
+        <div class="table-card">
+          <table>
+            <thead>
+              <tr><th>Value</th><th>Actions</th></tr>
+            </thead>
+            <tbody id="eroot-table-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="pane table-pane">
+        <h2>Tank Type Values</h2>
+        <div class="table-card">
+          <table>
+            <thead>
+              <tr><th>Value</th><th>Actions</th></tr>
+            </thead>
+            <tbody id="etype-table-body"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <!-- Second trio of tables -->
+    <div class="main-split">
+      <section class="pane table-pane">
+        <h2>Area Values</h2>
+        <div class="table-card">
+          <table>
+            <thead>
+              <tr><th>Value</th><th>Actions</th></tr>
+            </thead>
+            <tbody id="earea-table-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="pane table-pane">
+        <h2>Methodology Values</h2>
+        <div class="table-card">
+          <table>
+            <thead>
+              <tr><th>Value</th><th>Actions</th></tr>
+            </thead>
+            <tbody id="emethod-table-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="pane table-pane">
+        <h2>Well Type Values</h2>
+        <div class="table-card">
+          <table>
+            <thead>
+              <tr><th>Value</th><th>Actions</th></tr>
+            </thead>
+            <tbody id="ewtype-table-body"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </div>
+</body>
+</html>

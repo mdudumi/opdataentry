@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#3751FF" />
+  <title>E-Well Configuration</title>
+
+  <link rel="stylesheet" href="css/wells.css" />
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"
+  />
+  <!-- Supabase client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.js"></script>
+  <script src="js/wells.js" defer></script>
+</head>
+<body>
+  <div class="card-container full-height">
+    <header class="runsheet-header">
+      <a href="config.html" class="btn small">
+        <i class="fas fa-arrow-left"></i> Back
+      </a>
+      <h2 class="page-title">Wells Configuration</h2>
+    </header>
+
+    <div class="split-container">
+      <!-- Left pane: form -->
+      <section class="pane form-pane">
+        <form id="ewellForm">
+          <div class="form-group">
+            <label for="entityInput">Entity</label>
+            <select id="entityInput" name="entity_id" required>
+              <option value="">-- Select Entity --</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="wellName">Name</label>
+            <input type="text" id="wellName" name="name" placeholder="Enter name" required />
+          </div>
+
+          <div class="form-group">
+            <label for="startDate">Start Date</label>
+            <input type="date" id="startDate" name="start_date" />
+          </div>
+          <div class="form-group">
+            <label for="endDate">End Date</label>
+            <input type="date" id="endDate" name="end_date" />
+          </div>
+          <div class="form-group">
+            <label for="ddate">Drill Date</label>
+            <input type="date" id="ddate" name="ddate" />
+          </div>
+          <div class="form-group">
+            <label for="cdate">Completion Date</label>
+            <input type="date" id="cdate" name="cdate" />
+          </div>
+          <div class="form-group">
+            <label for="toDate">TO Date</label>
+            <input type="date" id="toDate" name="todate" />
+          </div>
+
+          <!-- DROPDOWNS -->
+          <div class="form-group">
+            <label for="wellType">Well Type</label>
+            <select id="wellType" name="welltype" required>
+              <option value="">-- Select Well Type --</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="method">Method</label>
+            <select id="method" name="method" required>
+              <option value="">-- Select Method --</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="area">Area</label>
+            <select id="area" name="area" required>
+              <option value="">-- Select Area --</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="tvd">TVD</label>
+            <input type="number" id="tvd" name="tvd" step="any" placeholder="True vertical depth" />
+          </div>
+          <div class="form-group">
+            <label for="md">MD</label>
+            <input type="number" id="md" name="md" step="any" placeholder="Measured depth" />
+          </div>
+          <div class="form-group">
+            <label for="comment">Comment</label>
+            <input type="text" id="comment" name="comment" placeholder="Optional notes" />
+          </div>
+          <button class="btn" type="submit">Save</button>
+        </form>
+      </section>
+
+      <!-- Right pane: table -->
+      <section class="pane table-pane">
+        <div class="table-wrapper">
+          <table>
+            <colgroup>
+              <col style="width:150px;"><col style="width:150px;">
+              <col style="width:150px;"><col style="width:150px;">
+              <col style="width:150px;"><col style="width:150px;">
+              <col style="width:150px;"><col style="width:150px;">
+              <col style="width:150px;"><col style="width:150px;">
+              <col style="width:150px;"><col style="width:150px;">
+              <col style="width:150px;">
+            </colgroup>
+            <thead>
+              <tr class="title-row">
+                <th data-key="entity_id">
+                  <div class="header-label"><span>Entity</span><span class="sort-indicator"></span></div>
+                  <div class="filter-dropdown">
+                    <select id="val-entity_id" class="filter-select">
+                      <option value="">All Entities</option>
+                    </select>
+                  </div>
+                </th>
+                <th data-key="name">
+                  <div class="header-label"><span>Name</span><span class="sort-indicator"></span></div>
+                  <div class="filter-dropdown">
+                    <select id="op-name" class="filter-select op">
+                      <option value="">Op</option>
+                      <option value="contains">Contains</option>
+                      <option value="=">=</option>
+                    </select>
+                    <input id="val-name" class="filter-input" placeholder="Filter name" />
+                  </div>
+                </th>
+                <th data-key="start_date">
+                  <div class="header-label"><span>Start Date</span><span class="sort-indicator"></span></div>
+                  <div class="filter-dropdown">
+                    <select id="op-start_date" class="filter-select op">
+                      <option value="">Op</option>
+                      <option value="=">=</option>
+                      <option value="<">&lt;</option>
+                      <option value=">">&gt;</option>
+                    </select>
+                    <input id="val-start_date" type="date" class="date-filter" />
+                  </div>
+                </th>
+                <th data-key="end_date">
+                  <div class="header-label"><span>End Date</span><span class="sort-indicator"></span></div>
+                  <div class="filter-dropdown">
+                    <select id="op-end_date" class="filter-select op">
+                      <option value="">Op</option>
+                      <option value="=">=</option>
+                      <option value="<">&lt;</option>
+                      <option value=">">&gt;</option>
+                    </select>
+                    <input id="val-end_date" type="date" class="date-filter" />
+                  </div>
+                </th>
+                <th data-key="ddate">
+                  <div class="header-label"><span>Drill Date</span><span class="sort-indicator"></span></div>
+                  <div class="filter-dropdown">
+                    <select id="op-ddate" class="filter-select op">
+                      <option value="">Op</option>
+                      <option value="=">=</option>
+                      <option value="<">&lt;</option>
+                      <option value=">">&gt;</option>
+                    </select>
+                    <input id="val-ddate" type="date" class="date-filter" />
+                  </div>
+                </th>
+                <th data-key="cdate">
+                  <div class="header-label"><span>Comp Date</span><span class="sort-indicator"></span></div>
+                  <div class="filter-dropdown">
+                    <select id="op-cdate" class="filter-select op">
+                      <option value="">Op</option>
+                      <option value="=">=</option>
+                      <option value="<">&lt;</option>
+                      <option value=">">&gt;</option>
+                    </select>
+                    <input id="val-cdate" type="date" class="date-filter" />
+                  </div>
+                </th>
+                <th data-key="todate">
+                  <div class="header-label"><span>TO Date</span><span class="sort-indicator"></span></div>
+                  <div class="filter-dropdown">
+                    <select id="op-todate" class="filter-select op">
+                      <option value="">Op</option>
+                      <option value="=">=</option>
+                      <option value="<">&lt;</option>
+                      <option value=">">&gt;</option>
+                    </select>
+                    <input id="val-todate" type="date" class="date-filter" />
+                  </div>
+                </th>
+                <!-- RIGHT PANE DROPDOWNS -->
+                <th data-key="welltype">
+                  <div class="header-label"><span>Well Type</span><span class="sort-indicator"></span></div>
+                  <div class="filter-dropdown">
+                    <select id="val-welltype" class="filter-select">
+                      <option value="">All Types</option>
+                    </select>
+                  </div>
+                </th>
+                <th data-key="method">
+                  <div class="header-label"><span>Method</span><span class="sort-indicator"></span></div>
+                  <div class="filter-dropdown">
+                    <select id="val-method" class="filter-select">
+                      <option value="">All Methods</option>
+                    </select>
+                  </div>
+                </th>
+                <th data-key="area">
+                  <div class="header-label"><span>Area</span><span class="sort-indicator"></span></div>
+                  <div class="filter-dropdown">
+                    <select id="val-area" class="filter-select">
+                      <option value="">All Areas</option>
+                    </select>
+                  </div>
+                </th>
+                <th data-key="tvd">
+                  <div class="header-label"><span>TVD</span><span class="sort-indicator"></span></div>
+                  <div class="filter-dropdown">
+                    <input id="val-tvd" class="filter-input" placeholder="Filter TVD" />
+                  </div>
+                </th>
+                <th data-key="md">
+                  <div class="header-label"><span>MD</span><span class="sort-indicator"></span></div>
+                  <div class="filter-dropdown">
+                    <input id="val-md" class="filter-input" placeholder="Filter MD" />
+                  </div>
+                </th>
+                <th data-key="comment">
+                  <div class="header-label"><span>Comment</span><span class="sort-indicator"></span></div>
+                  <div class="filter-dropdown">
+                    <input id="val-comment" class="filter-input" placeholder="Filter comment" />
+                  </div>
+                </th>
+                <th>
+                  <div class="header-label"><span>Actions</span><span class="sort-indicator"></span></div>
+                </th>
+              </tr>
+            </thead>
+            <tbody id="ewellTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </div>
+</body>
+</html>

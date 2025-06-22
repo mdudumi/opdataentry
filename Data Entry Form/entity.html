@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#3751FF" />
+  <title>Configure Entities</title>
+
+  <link rel="stylesheet" href="css/entity.css" />
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"
+  />
+
+  <!-- Supabase UMD client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.js"></script>
+
+  <script src="js/entity.js" defer></script>
+</head>
+<body>
+  <div class="card-container full-height">
+    <header class="runsheet-header">
+      <a href="config.html" class="btn small">
+        <i class="fas fa-arrow-left"></i> Back
+      </a>
+      <h2 class="page-title">Entities Configuration</h2>
+    </header>
+
+    <div class="split-container">
+      <!-- Left form pane -->
+      <section class="pane form-pane">
+        <form id="entityForm">
+          <div class="form-group">
+            <label for="entityName">Name</label>
+            <input type="text" id="entityName" required placeholder="Enter name" />
+          </div>
+<div class="form-group">
+  <label for="entityRoot">Root</label>
+  <select id="entityRoot">
+    <option value="">-- Select Root --</option>
+    <!-- we’ll dynamically fill these instead -->
+  </select>
+</div>
+          <div class="form-group">
+            <label for="startDate">Start Date</label>
+            <input type="date" id="startDate" />
+          </div>
+          <div class="form-group">
+            <label for="endDate">End Date</label>
+            <input type="date" id="endDate" />
+          </div>
+          <div class="form-group">
+            <label for="comment">Comment</label>
+            <input type="text" id="comment" placeholder="Optional notes" />
+          </div>
+          <button class="btn" type="submit">Save</button>
+        </form>
+      </section>
+
+      <!-- Right table pane -->
+      <section class="pane table-pane">
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <!-- Row 1: Column titles (click to sort) -->
+              <tr class="title-row">
+                <th>Name</th>
+                <th>Root</th>
+                <th>Start Date</th>
+                <th>End Date</th>
+                <th>Comment</th>
+                <th>Actions</th>
+              </tr>
+              <!-- Row 2: Filters under each title -->
+              <tr class="filter-row">
+                <th>
+                  <select id="op-name">
+                    <option value="">Op</option>
+                    <option value="=">=</option>
+                    <option value="contains">Contains</option>
+                    <option value="startswith">Starts With</option>
+                    <option value="endswith">Ends With</option>
+                  </select>
+                  <input id="val-name" type="text" placeholder="Filter Name" />
+                </th>
+                <th>
+                  <select id="op-root">
+                    <option value="">Op</option>
+                    <option value="=">=</option>
+                    <option value="contains">Contains</option>
+                  </select>
+                  <input id="val-root" type="text" placeholder="Filter Root" />
+                </th>
+                <th class="date-column">
+                  <select id="op-start_date">
+                    <option value="">Op</option>
+                    <option value="=">=</option>
+                    <option value="<">&lt;</option>
+                    <option value=">">&gt;</option>
+                    <option value="between">Between</option>
+                  </select>
+		<div class="date-filters">
+   		<input id="val-start_date-1" type="date" class="date-filter" />
+    		<input id="val-start_date-2" type="date" class="date-filter" />
+  		</div>
+                </th>
+                <th class="date-column">
+                  <select id="op-end_date">
+                    <option value="">Op</option>
+                    <option value="=">=</option>
+                    <option value="<">&lt;</option>
+                    <option value=">">&gt;</option>
+                    <option value="between">Between</option>
+                  </select>
+                    <div class="date-filters">
+    		<input id="val-end_date-1" type="date" class="date-filter" />
+    		<input id="val-end_date-2" type="date" class="date-filter" />
+  		</div>
+                </th>
+                <th>
+                  <select id="op-comment">
+                    <option value="">Op</option>
+                    <option value="=">=</option>
+                    <option value="contains">Contains</option>
+                  </select>
+                  <input id="val-comment" type="text" placeholder="Filter Comment" />
+                </th>
+                <th><!-- no filter for actions --></th>
+              </tr>
+            </thead>
+            <tbody id="entitiesTableBody">
+              <!-- Rows injected by entity.js -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </div>
+</body>
+</html>
