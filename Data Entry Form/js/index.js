@@ -1,36 +1,85 @@
-document.addEventListener('DOMContentLoaded', () => {
-  // Map route zones to their secure passwords
-  const zonePasswords = {
-    south1: 'south1pass',
-    north1: 'north1pass',
-    central1: 'central1pass'
-  };
+// ─── Supabase setup ─────────────────────────────────────────────────
+    const SUPABASE_URL      = 'https://nrkakpjugxncfyrgtpfr.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ya2FrcGp1Z3huY2Z5cmd0cGZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAxOTMyNjcsImV4cCI6MjA2NTc2OTI2N30.FzWYbNT792RH6rpxSr9OKlcjMV6qIuVL4oq_W9lsmQs';
 
-  const form     = document.getElementById('loginForm');
-  const errorMsg = document.getElementById('errorMsg');
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  form.addEventListener('submit', e => {
-    e.preventDefault();
+// Map moduleKey → target page
+const pageMap = {
+  Configuration:   'config.html',
+  Production:      'prod.html',
+  Workover:        'workover.html',
+  Pumps: 	   'pumps.html',
+};
 
-    const zone     = form.routeZone.value;
-    const zpass    = form.zonePassword.value;
-    const email    = form.userEmail.value.trim();
+let selectedModule = null;
 
-    // Validation
-    if (!zone || !zonePasswords[zone]) {
-      errorMsg.textContent = 'Please select a valid zone.';
+// Show the login modal
+function openLogin(moduleKey) {
+  selectedModule = moduleKey;
+  document.getElementById('loginError').textContent = '';
+  document.getElementById('modalModuleName').textContent = moduleKey;
+  document.getElementById('loginModal').style.display = 'flex';
+}
+
+// Hide the login modal
+function closeLogin() {
+  document.getElementById('loginModal').style.display = 'none';
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  // Attach click & keypress handlers to every module card
+  document.querySelectorAll('.module-card').forEach(function(card) {
+    const moduleKey = card.getAttribute('data-module');
+    if (!pageMap[moduleKey]) return;
+
+    card.addEventListener('click', function() {
+      openLogin(moduleKey);
+    });
+    card.addEventListener('keypress', function(e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        openLogin(moduleKey);
+      }
+    });
+  });
+
+  // Cancel button in modal
+  document.getElementById('loginCancel').addEventListener('click', closeLogin);
+
+  // Submit button in modal
+  document.getElementById('loginSubmit').addEventListener('click', async function() {
+    const email = document.getElementById('loginEmail').value.trim();
+    const pass  = document.getElementById('loginPassword').value.trim();
+    const errEl = document.getElementById('loginError');
+
+    if (!email || !pass) {
+      errEl.textContent = 'Please enter both email and password.';
       return;
     }
-    if (zpass !== zonePasswords[zone]) {
-      errorMsg.textContent = 'Incorrect zone password.';
+
+    // Query Supabase for matching user + module
+    const { data, error } = await sb
+      .from('users')
+      .select('id')
+      .eq('email', email)
+      .eq('password_hash', pass)       // in prod, compare hashed password
+      .eq('module', selectedModule)
+      .limit(1);
+
+    if (error) {
+      console.error(error);
+      errEl.textContent = 'Server error—check console.';
+      return;
+    }
+    if (!data || data.length === 0) {
+      errEl.textContent = 'Invalid credentials for this module.';
       return;
     }
 
-    // Store for next page
-    sessionStorage.setItem('userEmail', email);
-    sessionStorage.setItem('routeZone', zone);
-
-    // Redirect to the chosen zone's page
-    window.location.href = `${zone}.html`;
+// Success: record login and navigate
+    sessionStorage.setItem('module_access', selectedModule);
+    sessionStorage.setItem('email', email);        // ← store the email here
+    closeLogin();
+    window.location.href = pageMap[selectedModule];
   });
 });
