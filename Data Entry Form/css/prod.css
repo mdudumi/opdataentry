@@ -27,13 +27,22 @@ body {
 }
 
 /* Header */
-/* Wrap title + subtitle for centering */
+.dashboard-header {
+  position: relative;
+  background: var(--navy);
+  color: var(--secondary);
+  padding: 1rem 2rem;
+  text-align: center;
+  box-shadow: 0 2px 6px var(--shadow);
+}
 .dashboard-header .header-content {
   max-width: 800px;
   margin: 0 auto;
 }
-
-/* Subtitle styling */
+.dashboard-header h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+}
 .header-subtitle {
   margin-top: 0.25rem;
   color: #eef2ff;
@@ -41,16 +50,26 @@ body {
   font-weight: 400;
   opacity: 0.9;
 }
-.dashboard-header {
-  background: var(--navy);
+
+/* Header “Back” button */
+.dashboard-header .btn-back {
+  position: absolute;
+  top: 50%;
+  left: 1.5rem;
+  transform: translateY(-50%);
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  background: transparent;
   color: var(--secondary);
-  padding: 1rem 2rem;
-  text-align: center;
-  box-shadow: 0 2px 6px var(--shadow);
+  border: 2px solid var(--secondary);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition), transform var(--transition);
 }
-.dashboard-header h1 {
-  font-size: 1.75rem;
-  font-weight: 700;
+.dashboard-header .btn-back:hover {
+  background: var(--secondary);
+  color: var(--navy);
+  transform: translateY(-50%) scale(1.05);
 }
 
 /* Modules Grid */
@@ -99,7 +118,8 @@ body {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.5);
-  display: none;
+  backdrop-filter: blur(2px);
+  display: none;         /* toggled via JS */
   align-items: center;
   justify-content: center;
   z-index: 1000;
@@ -113,12 +133,15 @@ body {
   width: 90%;
   max-width: 400px;
   box-shadow: 0 8px 24px var(--shadow);
+  animation: slideIn 0.3s var(--transition);
 }
 .modal-card h2 {
   margin-bottom: 1rem;
   font-size: 1.25rem;
   color: var(--navy);
 }
+
+/* Form groups */
 .form-group {
   margin-bottom: 1rem;
 }
@@ -127,12 +150,19 @@ body {
   margin-bottom: 0.25rem;
   font-weight: 600;
 }
-.form-group input {
+.form-group select {
   width: 100%;
   padding: 0.6rem;
   border: 1px solid var(--border, #ccc);
   border-radius: var(--radius);
+  transition: box-shadow var(--transition);
 }
+.form-group select:focus {
+  box-shadow: 0 0 0 3px rgba(55,81,255,0.2);
+  outline: none;
+}
+
+/* Actions row */
 .modal-actions {
   display: flex;
   justify-content: flex-end;
@@ -154,15 +184,43 @@ body {
 .btn.primary:hover {
   background: #2e47e8;
 }
+/* Updated secondary button styling */
 .btn.secondary {
-  background: #eee;
-  color: var(--text);
+  background: transparent;
+  color: var(--primary);
+  border: 2px solid var(--primary);
 }
 .btn.secondary:hover {
-  background: #ddd;
+  background: var(--primary);
+  color: var(--secondary);
 }
+
+/* Error text */
 .error {
   color: var(--danger);
   margin-bottom: 1rem;
   min-height: 1.2em;
+}
+
+.module-card i.icon {
+  color: var(--primary);
+  font-size: 3rem;      /* old size */
+  margin-bottom: 1rem;
+}
+
+/* Slide-in animation */
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(-20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .modules-container {
+    grid-template-columns: 1fr;
+  }
+  .dashboard-header .btn-back {
+    left: 1rem;
+    padding: 0.4rem 0.8rem;
+  }
 }

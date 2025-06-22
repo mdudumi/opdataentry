@@ -1,0 +1,189 @@
+:root {
+  --primary:    #16268f;           /* deep navy-blue */
+  --back-btn:   #3751ff;           /* lighter blue for back button */
+  --accent:     #ff6b6b;           /* coral red for actions */
+  --secondary:  #fff;              /* white backgrounds */
+  --bg:         #f0f2f5;           /* page background */
+  --border:     #e2e8f0;           /* light gray borders */
+  --radius-lg:  0.75rem;           /* large rounding */
+  --radius-sm:  0.5rem;            /* small rounding */
+  --transition: 0.3s ease;
+  --shadow-sm:  rgba(0,0,0,0.05);
+  --shadow-md:  rgba(0,0,0,0.1);
+  --text:       #333;              /* default text */
+}
+
+/* 1. Reset & Base */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+body {
+  font-family: "Inter", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+}
+
+/* 2. Container */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+/* 3. Header (unchanged, professional) */
+.runsheet-header {
+  display: flex;
+  align-items: center;
+  padding: 0rem 1rem;
+  background: #16268f;
+  box-shadow: 0 2px 6px var(--shadow-sm);
+}
+.runsheet-header .container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+}
+.home-btn {
+  display: inline-flex;
+  align-items: center;
+  background: var(--back-btn);
+  color: var(--secondary);
+  padding: 0.5rem 1rem;
+  border-radius: 1.25rem;
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: 0 4px 8px var(--shadow-md);
+  transition: transform var(--transition), box-shadow var(--transition);
+}
+.home-btn i {
+  margin-right: 0.5rem;
+  font-size: 1rem;
+}
+.home-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px var(--shadow-md);
+}
+.page-title {
+  flex: 1;
+  text-align: center;
+  color: var(--secondary);
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+.spacer {
+  width: calc(1rem + 6rem);
+}
+
+/* 4. Status */
+.status {
+  color: #c00;
+  margin: 0.5rem 0 1rem;
+}
+
+/* 5. Split Layout */
+.main-split {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
+.pane {
+  background: var(--secondary);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 4px 12px var(--shadow-sm);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.form-pane {
+  flex: 1 1 180px;
+  padding: 0.75rem;
+}
+.table-pane {
+  flex: 2 1 auto;
+  padding: 0.75rem;
+  max-height: 50vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 6. Form Styles */
+.form-pane label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+  color: var(--primary);
+}
+.form-pane input,
+.form-pane select {
+  width: 100%;
+  padding: 0.4rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  margin-bottom: 0.5rem;
+  font-size: 0.85rem;
+}
+.form-pane button {
+  background: var(--primary);
+  color: var(--secondary);
+  padding: 0.4rem 0.6rem;
+  border: none;
+  border-radius: var(--radius-lg);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform var(--transition), box-shadow var(--transition);
+}
+.form-pane button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px var(--shadow-md);
+}
+
+/* 7. Table Card */
+.table-card {
+  flex: 1;
+  background: var(--secondary);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 4px 12px var(--shadow-sm);
+  overflow-y: auto;
+}
+.table-card table {
+  width: 100%;
+  font-size: 0.85rem;
+  border-collapse: collapse;
+}
+.table-card thead th,
+.table-card tbody td {
+  padding: 0.4rem 0.6rem;
+  border-bottom: 1px solid var(--border);
+}
+.table-card thead th {
+  position: sticky;
+  top: 0;
+  background: var(--secondary);
+  font-weight: 600;
+  color: var(--primary);
+  z-index: 1;
+}
+
+/* 8. Actions */
+.actions button {
+  background: var(--accent);
+  color: var(--secondary);
+  padding: 0.3rem 0.5rem;
+  font-size: 0.8rem;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+/* 9. Responsive */
+@media (max-width: 768px) {
+  .main-split { flex-direction: column; }
+  .form-pane, .table-pane { flex: 1 1 auto; }
+  .table-pane { max-height: 40vh; }
+}
