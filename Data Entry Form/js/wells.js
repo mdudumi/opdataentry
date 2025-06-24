@@ -1,10 +1,9 @@
 (async function() {
-
   // ─── Supabase setup & access guard ─────────────────────────────────
   const SUPABASE_URL      = 'https://nrkakpjugxncfyrgtpfr.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ya2FrcGp1Z3huY2Z5cmd0cGZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAxOTMyNjcsImV4cCI6MjA2NTc2OTI2N30.FzWYbNT792RH6rpxSr9OKlcjMV6qIuVL4oq_W9lsmQs';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ya2FrcGp1Z3huY2Z5cmd0cGZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAxOTMyNjcsImV4cCI6MjA2NTc2OTI2N30.FzWYbNT792RH6rpxSr9OKlcjMV6qIuVL4oq_W9lsmQs';
 
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   if (sessionStorage.getItem('module_access') !== 'Configuration') {
     window.location.href = 'index.html';
@@ -14,10 +13,12 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   document.addEventListener('DOMContentLoaded', async () => {
     const currentEmail = sessionStorage.getItem('email') || '';
     const tableName    = 'ewell';
-    const fields       = [
+
+    // → Move 'area' before 'tvd' and 'md' so columns align correctly
+    const fields = [
       'entity_id','name','start_date','end_date',
       'ddate','cdate','todate','welltype',
-      'method','tvd','md','area','comment'
+      'method','area','tvd','md','comment'
     ];
 
     let entries = [];
@@ -156,7 +157,12 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         });
         sortOrders.forEach(({ key, asc }) => {
           const th = ths.find(t => t.dataset.key === key);
-          const span = th.querySelector('.sort-indicator') || (() => { const s=document.createElement('span'); s.className='sort-indicator'; th.appendChild(s); return s; })();
+          const span = th.querySelector('.sort-indicator') || (() => {
+            const s = document.createElement('span');
+            s.className = 'sort-indicator';
+            th.appendChild(s);
+            return s;
+          })();
           span.textContent = asc ? '▲' : '▼';
         });
       }
@@ -222,7 +228,9 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         const ac = document.createElement('td');
         if (r.created_by === currentEmail) {
-          const btn = document.createElement('button'); btn.type='button'; btn.textContent='Delete';
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.textContent = 'Delete';
           btn.onclick = async () => {
             await sb.from(tableName).delete().eq('id', r.id);
             entries = entries.filter(e => e.id !== r.id);
@@ -238,21 +246,40 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     // ─── Form submission ────────────────────────────────────────────────
     form.addEventListener('submit', async e => {
       e.preventDefault();
+
+      // map field keys to actual element IDs
+      const idMap = {
+        entity_id:  'entityInput',
+        name:       'wellName',
+        start_date: 'startDate',
+        end_date:   'endDate',
+        todate:     'toDate',
+        welltype:   'wellType'
+      };
+
       const payload = { created_by: currentEmail };
       fields.forEach(key => {
-        const el = document.getElementById(
-          key === 'entity_id' ? 'entityInput'
-            : key === 'name'? 'wellName'
-            : key
-        );
+        const elId = idMap[key] || key;
+        const el = document.getElementById(elId);
+        if (!el) {
+          console.warn(`Skipping missing field element for "${key}" (tried id="${elId}")`);
+          return;
+        }
         let v = el.value || null;
-        if (key.includes('date') && v) v = new Date(v).toISOString().split('T')[0];
+        if (key.includes('date') && v) {
+          v = new Date(v).toISOString().split('T')[0];
+        }
         payload[key] = v;
       });
-      const { data } = await sb.from(tableName).insert([payload]).select();
-      entries.unshift(data[0]);
-      renderTable();
-      form.reset();
+
+      const { data, error } = await sb.from(tableName).insert([payload]).select();
+      if (error) {
+        console.error('Insert error:', error);
+      } else {
+        entries.unshift(data[0]);
+        renderTable();
+        form.reset();
+      }
     });
 
     // ─── Initialize ─────────────────────────────────────────────────────
