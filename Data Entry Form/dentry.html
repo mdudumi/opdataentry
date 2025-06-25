@@ -2,170 +2,75 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Production Data Entry</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 2rem; }
-    .card { border: 1px solid #ddd; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; }
-    .card h2 { margin-top: 0; }
-    table { width: 100%; border-collapse: collapse; margin-top: 0.5rem; }
-    th, td { border: 1px solid #ccc; padding: 0.5rem; text-align: left; }
-    .actions button { margin-right: 0.5rem; }
-    .form-row { display: flex; gap: 1rem; margin-bottom: 1rem; }
-    .form-row input { padding: 0.25rem; flex: 1; }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Production Entry</title>
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="css/dentry.css" />
+
+  <!-- FontAwesome for back-arrow -->
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"
+  />
+
+  <!-- Supabase client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@1/dist/umd/supabase.js"></script>
+  <!-- Your shared JS -->
+  <script src="js/dentry.js" defer></script>
 </head>
+
 <body>
-  <!-- Optional manual root selector (hidden when ?root= is present) -->
-  <div class="card" id="rootSelectorCard">
-    <h2>Select Entity (Root)</h2>
-    <select id="rootSelect">
-      <option value="">-- Choose Root --</option>
-    </select>
-  </div>
+  <div class="card-container full-height">
 
-  <div id="tablesContainer"></div>
+    <!-- HEADER + TABS -->
+    <header class="runsheet-header">
+      <a href="prod.html" class="btn small">
+        <i class="fas fa-arrow-left"></i> Back
+      </a>
+      <h2 class="page-title"></h2>
+      <div class="tab-buttons">
+        <button class="tab-btn" data-page="well">Wells</button>
+        <button class="tab-btn" data-page="tank">Tanks</button>
+        <button class="tab-btn" data-page="other">Other</button>
+      </div>
+    </header>
 
-  <script>
-    // ─── Supabase setup ─────────────────────────────────────────────────
-    const SUPABASE_URL      = 'https://nrkakpjugxncfyrgtpfr.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ya2FrcGp1Z3huY2Z5cmd0cGZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAxOTMyNjcsImV4cCI6MjA2NTc2OTI2N30.FzWYbNT792RH6rpxSr9OKlcjMV6qIuVL4oq_W9lsmQs';
-    const supabase          = supabaseJs.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    <!-- MAIN SPLIT -->
+    <div class="split-container">
 
-    // your three tables
-    const tables = [
-      { name: 'eprodwell',  title: 'Wells'            },
-      { name: 'eprodtank',  title: 'Tanks'            },
-      { name: 'eprodother', title: 'Other Production' }
-    ];
-    // fields to display & edit
-    const columns = ['name','capacity'];
+      <!-- FORM PANE -->
+      <section class="pane form-pane">
+        <form id="entryForm">
+          <!-- JS will inject:
+               <div class="form-group"><label for="entry_date">Entry Date</label><input id="entry_date" … /></div>
+               … including <select id="entity">, <select id="tank_name">, <select id="well">, etc.
+          -->
+          <button class="btn" type="submit">Save Entry</button>
+        </form>
+      </section>
 
-    let currentRoot = null;
+      <!-- TABLE PANE -->
+      <section class="pane table-pane">
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr class="title-row">
+                <!-- JS will inject one <th data-key="…"> for each field in the current tab,
+                     including <th data-key="tank_name">Tank Name</th> for tank & other pages,
+                     plus a final <th>Actions</th>. -->
+              </tr>
+            </thead>
+            <tbody id="entryTableBody">
+              <!-- JS will render rows here -->
+            </tbody>
+          </table>
+        </div>
+      </section>
 
-    // render the cards + forms + data tables
-    async function renderTables() {
-      const container = document.getElementById('tablesContainer');
-      container.innerHTML = '';
-      if (!currentRoot) return;
-
-      // hide manual selector
-      const selCard = document.getElementById('rootSelectorCard');
-      if (selCard) selCard.style.display = 'none';
-
-      for (let tbl of tables) {
-        // card container
-        const card = document.createElement('div');
-        card.className = 'card';
-        card.innerHTML = `<h2>${tbl.title}</h2>`;
-        container.appendChild(card);
-
-        // form row
-        const formRow = document.createElement('div');
-        formRow.className = 'form-row';
-        const inputs = {};
-        columns.forEach(col => {
-          const inp = document.createElement('input');
-          inp.placeholder = col;
-          inputs[col] = inp;
-          formRow.appendChild(inp);
-        });
-        const btnAdd = document.createElement('button');
-        btnAdd.textContent = 'Add';
-        formRow.appendChild(btnAdd);
-        card.appendChild(formRow);
-
-        // data table
-        const table = document.createElement('table');
-        const thead = document.createElement('thead');
-        const headRow = document.createElement('tr');
-        columns.forEach(col => {
-          const th = document.createElement('th');
-          th.textContent = col;
-          headRow.appendChild(th);
-        });
-        const thActions = document.createElement('th');
-        thActions.textContent = 'Actions';
-        headRow.appendChild(thActions);
-        thead.appendChild(headRow);
-        table.appendChild(thead);
-        const tbody = document.createElement('tbody');
-        table.appendChild(tbody);
-        card.appendChild(table);
-
-        // load existing rows
-        await loadData(tbl.name, tbody);
-
-        // add handler
-        btnAdd.addEventListener('click', async () => {
-          const payload = { root_id: currentRoot };
-          columns.forEach(col => payload[col] = inputs[col].value);
-          const { error } = await supabase.from(tbl.name).insert([payload]);
-          if (error) console.error(error);
-          columns.forEach(col => inputs[col].value = '');
-          await loadData(tbl.name, tbody);
-        });
-      }
-    }
-
-    // fetch & populate rows
-    async function loadData(tableName, tbody) {
-      tbody.innerHTML = '';
-      const { data, error } = await supabase
-        .from(tableName)
-        .select('*')
-        .eq('root_id', currentRoot);
-      if (error) {
-        console.error(error);
-        return;
-      }
-      data.forEach(row => {
-        const tr = document.createElement('tr');
-        columns.forEach(col => {
-          const td = document.createElement('td');
-          td.textContent = row[col] ?? '';
-          tr.appendChild(td);
-        });
-        const actionTd = document.createElement('td');
-        actionTd.className = 'actions';
-        const btnDel = document.createElement('button');
-        btnDel.textContent = 'Delete';
-        btnDel.onclick = async () => {
-          await supabase.from(tableName).delete().eq('id', row.id);
-          await loadData(tableName, tbody);
-        };
-        actionTd.appendChild(btnDel);
-        tr.appendChild(actionTd);
-        tbody.appendChild(tr);
-      });
-    }
-
-    document.addEventListener('DOMContentLoaded', async () => {
-      // read ?root= from URL
-      const params = new URLSearchParams(window.location.search);
-      const rootParam = params.get('root');
-      if (rootParam) {
-        currentRoot = rootParam;
-        await renderTables();
-      } else {
-        // fallback: manual selector
-        const sel = document.getElementById('rootSelect');
-        const { data, error } = await supabase.from('entity').select('id,name');
-        if (!error) {
-          data.forEach(r => {
-            const o = document.createElement('option');
-            o.value = r.id;
-            o.textContent = r.name;
-            sel.appendChild(o);
-          });
-          sel.addEventListener('change', e => {
-            currentRoot = e.target.value;
-            renderTables();
-          });
-        }
-      }
-    });
-  </script>
+    </div><!-- /.split-container -->
+  </div><!-- /.card-container -->
 </body>
 </html>
