@@ -59,7 +59,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Query Supabase for matching user + module
 const { data, error } = await sb
-  .from('logdetails.users')    // ← include the schema here
+  .from('users', { schema: 'logdetails' })   // <-- separate table & schema
   .select('id')
   .eq('email', email)
   .eq('password_hash', pass)
