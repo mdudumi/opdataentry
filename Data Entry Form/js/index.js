@@ -57,29 +57,27 @@ document.addEventListener('DOMContentLoaded', function() {
       return;
     }
 
-// Query Supabase for matching user + module
 const { data, error } = await sb
-  .from('users')    // ← THIS
-  .select('id')
-  .eq('email', email)
-  .eq('password_hash', pass)
-  .eq('module', selectedModule)
-  .limit(1);
-      
-    if (error) {
-      console.error(error);
-      errEl.textContent = 'Server error—check console.';
-      return;
-    }
-    if (!data || data.length === 0) {
-      errEl.textContent = 'Invalid credentials for this module.';
-      return;
-    }
+  .rpc('login_user', {
+    p_email: email,
+    p_pass:  pass,
+    p_mod:   selectedModule
+  });
 
-// Success: record login and navigate
-    sessionStorage.setItem('module_access', selectedModule);
-    sessionStorage.setItem('email', email);        // ← store the email here
-    closeLogin();
-    window.location.href = pageMap[selectedModule];
+if (error) {
+  console.error(error);
+  errEl.textContent = 'Server error—check console.';
+  return;
+}
+if (!data || data.length === 0) {
+  errEl.textContent = 'Invalid credentials for this module.';
+  return;
+}
+
+// Success: data[0].id is the user’s id
+sessionStorage.setItem('module_access', selectedModule);
+sessionStorage.setItem('email', email);
+closeLogin();
+window.location.href = pageMap[selectedModule];
   });
 });
