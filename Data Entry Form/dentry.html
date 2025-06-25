@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Production Entry</title>
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="css/dentry.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+  <!-- FontAwesome for back-arrow -->
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"
+  />
+
+  <!-- Supabase client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@1/dist/umd/supabase.js"></script>
+  <!-- Your shared JS -->
+  <script src="js/dentry.js" defer></script>
+</head>
+
+<body>
+  <div class="card-container full-height">
+
+    <!-- HEADER + TABS -->
+    <header class="runsheet-header">
+      <a href="prod.html" class="btn small">
+        <i class="fas fa-arrow-left"></i> Back
+      </a>
+      <h2 class="page-title"></h2>
+      <div class="tab-buttons">
+        <button class="tab-btn" data-page="well">Wells</button>
+        <button class="tab-btn" data-page="tank">Tanks</button>
+        <button class="tab-btn" data-page="other">Other</button>
+      </div>
+    </header>
+
+    <!-- MAIN SPLIT -->
+    <div class="split-container">
+
+      <!-- FORM PANE -->
+      <section class="pane form-pane">
+        <form id="entryForm">
+          <!-- JS will inject:
+               <div class="form-group"><label for="entry_date">Entry Date</label><input id="entry_date" … /></div>
+               … including <select id="entity">, <select id="tank_name">, <select id="well">, etc.
+          -->
+          <button class="btn" type="submit">Save Entry</button>
+        </form>
+      </section>
+
+      <!-- TABLE PANE -->
+      <section class="pane table-pane">
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr class="title-row">
+                <!-- JS will inject one <th data-key="…"> for each field in the current tab,
+                     including <th data-key="tank_name">Tank Name</th> for tank & other pages,
+                     plus a final <th>Actions</th>. -->
+              </tr>
+            </thead>
+            <tbody id="entryTableBody">
+              <!-- JS will render rows here -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </div><!-- /.split-container -->
+  </div><!-- /.card-container -->
+</body>
+</html>
