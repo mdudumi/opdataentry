@@ -12,8 +12,14 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 })();
 
 document.addEventListener('DOMContentLoaded', () => {
-  // ─── Header “Back” button ───────────────────────────────────────────
+  // ─── Modal & Back-button setup ─────────────────────────────────────
+  const modal     = document.getElementById('filterModal');
   const headerBack = document.getElementById('headerBack');
+
+  // hide modal immediately to avoid blink
+  modal.style.display = 'none';
+
+  // show back button if not on index
   if (!window.location.pathname.endsWith('index.html') && window.location.pathname !== '/') {
     headerBack.style.display = 'inline-block';
     headerBack.addEventListener('click', () => {
@@ -23,11 +29,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ─── Module filter modal elements ─────────────────────────────────
   const modules   = document.querySelectorAll('.module-card');
-  const modal     = document.getElementById('filterModal');
   const titleSpan = document.getElementById('filterModuleName');
   const selRoot   = document.getElementById('filterRoot');
-  const selEntity = document.getElementById('filterEntity');
-  const selWell   = document.getElementById('filterWell');
   const btnBack   = document.getElementById('filterBack');
   const btnEnter  = document.getElementById('filterEnter');
 
@@ -37,7 +40,10 @@ document.addEventListener('DOMContentLoaded', () => {
       .from(table)
       .select(labelField)
       .order(labelField, { ascending: true });
-    if (error) { console.error(`Error loading ${table}:`, error); return; }
+    if (error) {
+      console.error(`Error loading ${table}:`, error);
+      return;
+    }
     data.forEach(row => {
       const opt = document.createElement('option');
       opt.value       = row[labelField];
@@ -46,16 +52,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  loadDropdown('eroot',  selRoot,   'value');
-  loadDropdown('entity', selEntity, 'name');
-  loadDropdown('ewell',  selWell,   'name');
+  // only load roots
+  loadDropdown('eroot', selRoot, 'value');
 
   // ─── Show filter modal when clicking a module ─────────────────────
   modules.forEach(card => {
     card.addEventListener('click', () => {
-      const mod = card.dataset.module;
       titleSpan.textContent = card.querySelector('h2').textContent;
-      sessionStorage.setItem('selectedModule', mod);
+      sessionStorage.setItem('selectedModule', card.dataset.module);
       modal.style.display = 'flex';
     });
   });
@@ -66,20 +70,13 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // ─── Enter: build query string and redirect ────────────────────────
-btnEnter.addEventListener('click', () => {
-  // read your filters
-  const rootVal   = selRoot.value;
-  const entityVal = selEntity.value;
-  const wellVal   = selWell.value;
+  btnEnter.addEventListener('click', () => {
+    const rootVal = selRoot.value;
+    const params  = new URLSearchParams();
+    if (rootVal) params.set('root', rootVal);
 
-  // build query-string
-  const params = new URLSearchParams();
-  if (rootVal)   params.set('root',   rootVal);
-  if (entityVal) params.set('entity', entityVal);
-  if (wellVal)   params.set('well',   wellVal);
-
-  // redirect to your static page
-  window.location.href = 'production-data-entry.html' +
-                         (params.toString() ? `?${params}` : '');
-});
+    window.location.href =
+      'dentry.html' +
+      (params.toString() ? `?${params}` : '');
+  });
 });
