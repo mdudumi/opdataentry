@@ -2,7 +2,7 @@
     const SUPABASE_URL      = 'https://nrkakpjugxncfyrgtpfr.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ya2FrcGp1Z3huY2Z5cmd0cGZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAxOTMyNjcsImV4cCI6MjA2NTc2OTI2N30.FzWYbNT792RH6rpxSr9OKlcjMV6qIuVL4oq_W9lsmQs';
 
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY,{ db: { schema: 'logdetails' } });
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Map moduleKey → target page
 const pageMap = {
@@ -59,7 +59,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Query Supabase for matching user + module
     const { data, error } = await sb
-      .from('logdetails.users')
+      .from('users')
       .select('id')
       .eq('email', email)
       .eq('password_hash', pass)       // in prod, compare hashed password
