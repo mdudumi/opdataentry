@@ -57,14 +57,15 @@ document.addEventListener('DOMContentLoaded', function() {
       return;
     }
 
-    // Query Supabase for matching user + module
-    const { data, error } = await sb
-      .from('users').schema('logdetails')
-      .select('id')
-      .eq('email', email)
-      .eq('password_hash', pass)       // in prod, compare hashed password
-      .eq('module', selectedModule)
-      .limit(1);
+// Query Supabase for matching user + module
+const { data, error } = await sb
+  .from('users')
+  .withSchema('logdetails')    // <-- correct method name
+  .select('id')
+  .eq('email', email)
+  .eq('password_hash', pass)
+  .eq('module', selectedModule)
+  .limit(1);
 
     if (error) {
       console.error(error);
